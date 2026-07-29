@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.bandwidth_monitor"
+    namespace = "com.xheghun.framewright.bandwidth_monitor"
     compileSdk {
         version =
             release(36) {

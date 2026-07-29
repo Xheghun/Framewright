@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.codec_inspector"
+    namespace = "com.xheghun.framewright.codec_inspector"
     compileSdk {
         version =
             release(36) {
