@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.storage"
+    namespace = "com.xheghun.framewright.storage"
     compileSdk {
         version =
             release(36) {

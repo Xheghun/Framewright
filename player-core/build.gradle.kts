@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.player_core"
+    namespace = "com.xheghun.framewright.player_core"
     compileSdk {
         version =
             release(36) {

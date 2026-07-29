@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.diagnostics_overlay"
+    namespace = "com.xheghun.framewright.diagnostics_overlay"
     compileSdk {
         version =
             release(36) {

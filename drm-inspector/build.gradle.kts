@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.drm_inspector"
+    namespace = "com.xheghun.framewright.drm_inspector"
     compileSdk {
         version =
             release(36) {

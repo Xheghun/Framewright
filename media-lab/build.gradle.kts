@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xheghun.media_lab"
+    namespace = "com.xheghun.framewright.media_lab"
     compileSdk {
         version =
             release(36) {
