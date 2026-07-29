@@ -4,7 +4,7 @@ Framewright is a professional-grade video diagnostics toolkit for Android, desig
 
 Unlike typical video players, Framewright focuses on **observability** and **reproducibility**, making it an essential tool for media engineers and developers working with complex playback stacks.
 
-## 🚀 Key Features
+## Key Features
 
 - **Media-Agnostic Analytics**: A core telemetry engine that decouples event logic from the specific player implementation.
 - **ABR Explorer**: Real-time visualization of bandwidth estimation vs. track selection(WIP).
@@ -12,7 +12,7 @@ Unlike typical video players, Framewright focuses on **observability** and **rep
 - **DRM Inspector**: Detailed Widevine status reporting and a catalog of reproducible failure signatures(WIP).
 - **Media Lab**: A fixture-driven simulation environment to reproduce edge-case bugs without real network infrastructure(WIP).
 
-## 📦 Project Structure
+## Project Structure
 
 Framewright is organized into specialized modules to ensure a clean separation of concerns:
 
