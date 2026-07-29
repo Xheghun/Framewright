@@ -7,7 +7,7 @@ enum class DrmScheme {
     WIDEVINE,
     FAIRPLAY,
     PLAYREADY,
-    OTHER
+    OTHER,
 }
 
 @Serializable
@@ -21,7 +21,7 @@ sealed class DiagnosticEvent {
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val elapsedSincePrepareMs: Long
+        val elapsedSincePrepareMs: Long,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -33,7 +33,7 @@ sealed class DiagnosticEvent {
         val toBitrate: Int,
         val reason: String,
         val estimatedBandwidthBps: Long,
-        val bufferedDurationMs: Long
+        val bufferedDurationMs: Long,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -41,15 +41,15 @@ sealed class DiagnosticEvent {
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val bufferedMsAtStart: Long
+        val bufferedMsAtStart: Long,
     ) : DiagnosticEvent()
 
-   @Serializable
+    @Serializable
     data class RebufferEnd(
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val durationMs: Long
+        val durationMs: Long,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -58,7 +58,7 @@ sealed class DiagnosticEvent {
         override val eventId: String,
         override val timestampMs: Long,
         val decoderName: String,
-        val isHardwareAccelerated: Boolean
+        val isHardwareAccelerated: Boolean,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -67,7 +67,7 @@ sealed class DiagnosticEvent {
         override val eventId: String,
         override val timestampMs: Long,
         val count: Int,
-        val elapsedMs: Long
+        val elapsedMs: Long,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -76,7 +76,7 @@ sealed class DiagnosticEvent {
         override val eventId: String,
         override val timestampMs: Long,
         val errorMessage: String,
-        val wasCanceled: Boolean
+        val wasCanceled: Boolean,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -84,7 +84,7 @@ sealed class DiagnosticEvent {
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val securityLevel: String
+        val securityLevel: String,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -94,7 +94,7 @@ sealed class DiagnosticEvent {
         override val timestampMs: Long,
         val sampleBps: Long,
         val fastEstimateBps: Long,
-        val slowEstimateBps: Long
+        val slowEstimateBps: Long,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -105,7 +105,7 @@ sealed class DiagnosticEvent {
         val errorCode: String,
         val errorMessage: String? = null,
         val cause: String? = null,
-        val isFatal: Boolean = true
+        val isFatal: Boolean = true,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -117,7 +117,7 @@ sealed class DiagnosticEvent {
         val drmScheme: DrmScheme? = null,
         val deviceModel: String = "unknown",
         val osVersion: String = "unknown",
-        val appVersion: String = "unknown"
+        val appVersion: String = "unknown",
     ) : DiagnosticEvent()
 
     @Serializable
@@ -125,6 +125,6 @@ sealed class DiagnosticEvent {
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val durationMs: Long
+        val durationMs: Long,
     ) : DiagnosticEvent()
 }
