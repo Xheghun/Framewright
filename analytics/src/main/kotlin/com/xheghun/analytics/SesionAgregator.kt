@@ -7,7 +7,6 @@ import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.collections.mutableListOf
 import kotlin.concurrent.withLock
 
 private const val SCHEMA_VERSION = 1
@@ -22,11 +21,19 @@ data class ExportedSession(
 )
 
 sealed class ExportResult {
-    data class Success(val json: String) : ExportResult()
-    data class Failure(val sessionId: String, val cause: Throwable) : ExportResult()
+    data class Success(
+        val json: String,
+    ) : ExportResult()
+
+    data class Failure(
+        val sessionId: String,
+        val cause: Throwable,
+    ) : ExportResult()
 }
 
-class SessionAggregator( private val maxEventsPerSession: Int = DEFAULT_MAX_EVENTS_PER_SESSION) {
+class SessionAggregator(
+    private val maxEventsPerSession: Int = DEFAULT_MAX_EVENTS_PER_SESSION,
+) {
     private val eventsBySession = ConcurrentHashMap<String, CopyOnWriteArrayList<DiagnosticEvent>>()
     private val locksBySession = ConcurrentHashMap<String, ReentrantLock>()
     private val truncatedSessions = ConcurrentHashMap.newKeySet<String>()
@@ -39,7 +46,7 @@ class SessionAggregator( private val maxEventsPerSession: Int = DEFAULT_MAX_EVEN
     fun record(event: DiagnosticEvent) {
         val lock = locksBySession.getOrPut(event.sessionId) { ReentrantLock() }
         lock.withLock {
-            val list = eventsBySession.getOrPut(event.sessionId) {  CopyOnWriteArrayList<DiagnosticEvent>() }
+            val list = eventsBySession.getOrPut(event.sessionId) { CopyOnWriteArrayList<DiagnosticEvent>() }
             list.add(event)
             if (list.size > maxEventsPerSession) {
                 val overflow = list.size - maxEventsPerSession
@@ -56,19 +63,18 @@ class SessionAggregator( private val maxEventsPerSession: Int = DEFAULT_MAX_EVEN
 
     fun isTruncated(sessionId: String): Boolean = sessionId in truncatedSessions
 
-
-    fun exportSessionJson(sessionId: String): ExportResult {
-        return try {
-            val exported = ExportedSession(
-                sessionId = sessionId,
-                truncated = isTruncated(sessionId),
-                events = eventsFor(sessionId)
-            )
+    fun exportSessionJson(sessionId: String): ExportResult =
+        try {
+            val exported =
+                ExportedSession(
+                    sessionId = sessionId,
+                    truncated = isTruncated(sessionId),
+                    events = eventsFor(sessionId),
+                )
             ExportResult.Success(json.encodeToString(exported))
         } catch (e: SerializationException) {
             ExportResult.Failure(sessionId, e)
         }
-    }
 
     fun clear(sessionId: String) {
         val lock = locksBySession[sessionId]

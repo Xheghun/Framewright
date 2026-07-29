@@ -9,12 +9,19 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-
 class SessionAggregatorTest {
-
-    private fun startEvent(sessionId: String, eventId: String) = DiagnosticEvent.SessionStart(
-        sessionId = sessionId, eventId = eventId, timestampMs = 0L,
-        mediaUri = "uri", drmScheme = null, deviceModel = "x", osVersion = "y", appVersion = "z"
+    private fun startEvent(
+        sessionId: String,
+        eventId: String,
+    ) = DiagnosticEvent.SessionStart(
+        sessionId = sessionId,
+        eventId = eventId,
+        timestampMs = 0L,
+        mediaUri = "uri",
+        drmScheme = null,
+        deviceModel = "x",
+        osVersion = "y",
+        appVersion = "z",
     )
 
     @Test
@@ -25,9 +32,11 @@ class SessionAggregatorTest {
         aggregator.record(startEvent(sessionId, "e1"))
         aggregator.record(
             DiagnosticEvent.RenderFirstFrame(
-                sessionId = sessionId, eventId = "e2", timestampMs = 1450L,
-                elapsedSincePrepareMs = 450L
-            )
+                sessionId = sessionId,
+                eventId = "e2",
+                timestampMs = 1450L,
+                elapsedSincePrepareMs = 450L,
+            ),
         )
 
         val events = aggregator.eventsFor(sessionId)
@@ -42,9 +51,11 @@ class SessionAggregatorTest {
         val sessionId = "session-2"
         aggregator.record(
             DiagnosticEvent.RebufferStart(
-                sessionId = sessionId, eventId = "e1", timestampMs = 2000L,
-                bufferedMsAtStart = 500L
-            )
+                sessionId = sessionId,
+                eventId = "e1",
+                timestampMs = 2000L,
+                bufferedMsAtStart = 500L,
+            ),
         )
 
         val result = aggregator.exportSessionJson(sessionId)
@@ -73,9 +84,13 @@ class SessionAggregatorTest {
         val aggregator = SessionAggregator()
         aggregator.record(
             DiagnosticEvent.PlaybackError(
-                sessionId = "s", eventId = "e1", timestampMs = 0L,
-                errorCode = "SOURCE_ERROR", cause = null, isFatal = true
-            )
+                sessionId = "s",
+                eventId = "e1",
+                timestampMs = 0L,
+                errorCode = "SOURCE_ERROR",
+                cause = null,
+                isFatal = true,
+            ),
         )
         aggregator.clear("s")
         assertTrue(aggregator.eventsFor("s").isEmpty())
@@ -112,21 +127,23 @@ class SessionAggregatorTest {
     }
 
     @Test
-    fun `concurrent record calls from many coroutines lose no events`() = runBlocking {
-        val aggregator = SessionAggregator(maxEventsPerSession = 10_000)
-        val sessionId = "concurrent-session"
-        val coroutineCount = 50
-        val eventsPerCoroutine = 100
+    fun `concurrent record calls from many coroutines lose no events`() =
+        runBlocking {
+            val aggregator = SessionAggregator(maxEventsPerSession = 10_000)
+            val sessionId = "concurrent-session"
+            val coroutineCount = 50
+            val eventsPerCoroutine = 100
 
-        val jobs = (0 until coroutineCount).map { coroutineIndex ->
-            async {
-                repeat(eventsPerCoroutine) { i ->
-                    aggregator.record(startEvent(sessionId, "c$coroutineIndex-e$i"))
+            val jobs =
+                (0 until coroutineCount).map { coroutineIndex ->
+                    async {
+                        repeat(eventsPerCoroutine) { i ->
+                            aggregator.record(startEvent(sessionId, "c$coroutineIndex-e$i"))
+                        }
+                    }
                 }
-            }
-        }
-        jobs.awaitAll()
+            jobs.awaitAll()
 
-        assertEquals(coroutineCount * eventsPerCoroutine, aggregator.eventsFor(sessionId).size)
-    }
+            assertEquals(coroutineCount * eventsPerCoroutine, aggregator.eventsFor(sessionId).size)
+        }
 }
