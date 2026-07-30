@@ -11,6 +11,12 @@ enum class DrmScheme {
 }
 
 @Serializable
+enum class TrackType { VIDEO, AUDIO, TEXT}
+
+@Serializable
+enum class LoadErrorClass { TIMEOUT, HTTP_4XX, HTTP_5XX, DNS, UNKNOWN }
+
+@Serializable
 sealed class DiagnosticEvent {
     abstract val sessionId: String
     abstract val eventId: String
@@ -59,6 +65,11 @@ sealed class DiagnosticEvent {
         override val timestampMs: Long,
         val decoderName: String,
         val isHardwareAccelerated: Boolean,
+        val codecName: String,
+        val mimeType: String,
+        val initDurationMs: Long,
+        val trackType: TrackType,
+        val hardwareAccelerated: Boolean,
     ) : DiagnosticEvent()
 
     @Serializable
@@ -75,8 +86,12 @@ sealed class DiagnosticEvent {
         override val sessionId: String,
         override val eventId: String,
         override val timestampMs: Long,
-        val errorMessage: String,
+        val errorMessage: String?,
         val wasCanceled: Boolean,
+        val uri: String,
+        val httpStatus: Int?,
+        val errorClass: String,
+        val retryCount: Int,
     ) : DiagnosticEvent()
 
     @Serializable
