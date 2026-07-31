@@ -12,6 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.xheghun.framewright.ui.theme.FramewrightTheme
+import android.util.Log
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.ui.PlayerView
+import com.xheghun.player_core.FramewrightExoPlayerController
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,8 +29,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FramewrightTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    PlayerScreen(
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
@@ -30,21 +38,39 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(
-    name: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier,
-    )
-}
+// Public HLS test stream — replace with your own once you're past the smoke test.
+private const val TEST_STREAM_URL =
+    "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
 
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    FramewrightTheme {
-        Greeting("Android")
+fun PlayerScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val controller = remember { FramewrightExoPlayerController(context) }
+
+    AndroidView(
+        modifier = modifier.fillMaxSize(),
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                player = controller.currentExoPlayer()
+            }
+        }
+    )
+
+    DisposableEffect(lifecycleOwner) {
+        val collectorJob = kotlinx.coroutines.MainScope().launch {
+            controller.events.collect { event ->
+                Log.d("Framewright", event.toString())
+            }
+        }
+
+        controller.prepare(TEST_STREAM_URL)
+        controller.play()
+
+        onDispose {
+            collectorJob.cancel()
+            controller.release()
+        }
     }
 }

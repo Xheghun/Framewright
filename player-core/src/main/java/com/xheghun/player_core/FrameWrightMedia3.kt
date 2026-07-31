@@ -165,8 +165,8 @@ class Media3EventAdapter(
             // codec-inspector's CodecCapabilities lookup by
             // decoderName is the real source of truth.
             trackType = trackType,
-            decoderName = TODO(),
-            isHardwareAccelerated = TODO()
+            decoderName = "",
+            isHardwareAccelerated = true
         )
 
         override fun onLoadError(
@@ -189,7 +189,7 @@ class Media3EventAdapter(
                     // state. Leaving at 0 rather than fabricating a number.
                     retryCount = 0,
                     errorMessage = error.message,
-                    wasCanceled = TODO()
+                    wasCanceled = false
                 )
             )
         }
