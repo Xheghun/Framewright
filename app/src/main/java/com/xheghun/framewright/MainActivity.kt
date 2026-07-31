@@ -1,24 +1,22 @@
 package com.xheghun.framewright
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.xheghun.framewright.ui.theme.FramewrightTheme
-import android.util.Log
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.ui.PlayerView
+import com.xheghun.framewright.ui.theme.FramewrightTheme
 import com.xheghun.player_core.FramewrightExoPlayerController
 import kotlinx.coroutines.launch
 
@@ -55,15 +53,16 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
             PlayerView(ctx).apply {
                 player = controller.currentExoPlayer()
             }
-        }
+        },
     )
 
     DisposableEffect(lifecycleOwner) {
-        val collectorJob = kotlinx.coroutines.MainScope().launch {
-            controller.events.collect { event ->
-                Log.d("Framewright", event.toString())
+        val collectorJob =
+            kotlinx.coroutines.MainScope().launch {
+                controller.events.collect { event ->
+                    Log.d("Framewright", event.toString())
+                }
             }
-        }
 
         controller.prepare(TEST_STREAM_URL)
         controller.play()

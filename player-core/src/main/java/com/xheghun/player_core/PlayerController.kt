@@ -19,32 +19,42 @@ import java.util.UUID
 interface FramewrightPlayerController {
     val events: SharedFlow<DiagnosticEvent>
 
-    fun prepare(mediaUri: String, drmScheme: DrmScheme? = null)
+    fun prepare(
+        mediaUri: String,
+        drmScheme: DrmScheme? = null,
+    )
+
     fun play()
+
     fun pause()
+
     fun seekTo(positionMs: Long)
+
     fun release()
 }
 
 class FramewrightExoPlayerController(
-    private val context: Context
+    private val context: Context,
 ) : FramewrightPlayerController {
-    private val bus = DiagnosticEventBus(
-        onEventDropped = { event ->
-            // TODO: route to a real logger once app is implemented;
-            Log.w("Framewright", "Dropped diagnostic event: ${event.eventId}")
-        }
-    )
+    private val bus =
+        DiagnosticEventBus(
+            onEventDropped = { event ->
+                // TODO: route to a real logger once app is implemented;
+                Log.w("Framewright", "Dropped diagnostic event: ${event.eventId}")
+            },
+        )
 
     override val events = bus.events
 
     private val exoPlayer: ExoPlayer = ExoPlayer.Builder(context).build()
-    private val adapter = Media3EventAdapter(exoPlayer)
+    private val adapter = FrameWrightMedia3EventAdapter(exoPlayer)
 
     private var currentSessionId: String? = null
 
-
-    override fun prepare(mediaUri: String, drmScheme: DrmScheme?) {
+    override fun prepare(
+        mediaUri: String,
+        drmScheme: DrmScheme?,
+    ) {
         // Tear down any prior session cleanly before starting a new one — AbstractPlayerEventSource
         // enforces this at the adapter level (attach() while attached throws), so we must detach
         // first rather than relying on prepare() being "the first call ever."
@@ -55,9 +65,9 @@ class FramewrightExoPlayerController(
                     sessionId = previousSessionId,
                     eventId = UUID.randomUUID().toString(),
                     timestampMs = System.currentTimeMillis(),
-                    //reason = com.xheghun.analytics.SessionEndReason.USER_STOPPED,
-                    durationMs = 0
-                )
+                    // reason = com.xheghun.analytics.SessionEndReason.USER_STOPPED,
+                    durationMs = 0,
+                ),
             )
         }
 
@@ -73,8 +83,8 @@ class FramewrightExoPlayerController(
                 drmScheme = drmScheme,
                 deviceModel = Build.MODEL,
                 osVersion = Build.VERSION.RELEASE,
-                appVersion = appVersionName()
-            )
+                appVersion = appVersionName(),
+            ),
         )
 
         adapter.attach(bus, sessionId)
@@ -97,19 +107,20 @@ class FramewrightExoPlayerController(
                     eventId = UUID.randomUUID().toString(),
                     timestampMs = System.currentTimeMillis(),
                     durationMs = 0,
-                    //reason = com.xheghun.analytics.SessionEndReason.APP_BACKGROUNDED
-                )
+                    // reason = com.xheghun.analytics.SessionEndReason.APP_BACKGROUNDED
+                ),
             )
         }
         adapter.detach()
         exoPlayer.release()
     }
 
-    private fun appVersionName(): String = try {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
-    } catch (e: Exception) {
-        "unknown"
-    }
+    private fun appVersionName(): String =
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+        } catch (e: Exception) {
+            "unknown"
+        }
 
     /** Exposed for the diagnostics overlay's PlayerView binding — see the boundary-exception note above. */
     fun currentExoPlayer(): ExoPlayer = exoPlayer
