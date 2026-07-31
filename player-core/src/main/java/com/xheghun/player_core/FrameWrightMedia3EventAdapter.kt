@@ -1,10 +1,9 @@
 package com.xheghun.player_core
 
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.HttpDataSource
-import com.xheghun.analytics.TrackType
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.LoadEventInfo
@@ -13,6 +12,7 @@ import com.xheghun.analytics.AbstractPlayerEventSource
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventBus
 import com.xheghun.analytics.LoadErrorClass
+import com.xheghun.analytics.TrackType
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -37,10 +37,9 @@ import java.util.UUID
  * releases before. Verify these against whatever media3-exoplayer version is actually
  * pinned in build.gradle.kts before assuming this compiles as-is.
  */
-class Media3EventAdapter(
-    private val exoPlayer: ExoPlayer
+class FrameWrightMedia3EventAdapter(
+    private val exoPlayer: ExoPlayer,
 ) : AbstractPlayerEventSource() {
-
     private var bus: DiagnosticEventBus? = null
     private var sessionId: String = ""
 
@@ -62,11 +61,10 @@ class Media3EventAdapter(
     private fun newEventId(): String = UUID.randomUUID().toString()
 
     private val listener = @UnstableApi object : AnalyticsListener {
-
         override fun onRenderedFirstFrame(
             eventTime: AnalyticsListener.EventTime,
             output: Any,
-            renderTimeMs: Long
+            renderTimeMs: Long,
         ) {
             hasRenderedFirstFrame = true
             publish(
@@ -74,12 +72,15 @@ class Media3EventAdapter(
                     sessionId = sessionId,
                     eventId = newEventId(),
                     timestampMs = System.currentTimeMillis(),
-                    elapsedSincePrepareMs = System.currentTimeMillis() - prepareStartMs
-                )
+                    elapsedSincePrepareMs = System.currentTimeMillis() - prepareStartMs,
+                ),
             )
         }
 
-        override fun onPlaybackStateChanged(eventTime: AnalyticsListener.EventTime, state: Int) {
+        override fun onPlaybackStateChanged(
+            eventTime: AnalyticsListener.EventTime,
+            state: Int,
+        ) {
             // Only treat STATE_BUFFERING as a rebuffer if it happens AFTER the first frame —
             // initial buffering before first frame is TTFF's concern, not rebuffering's
             // (EDD §10: rebuffer ratio excludes initial buffering).
@@ -92,8 +93,8 @@ class Media3EventAdapter(
                                 sessionId = sessionId,
                                 eventId = newEventId(),
                                 timestampMs = System.currentTimeMillis(),
-                                bufferedMsAtStart = exoPlayer.bufferedPosition - exoPlayer.currentPosition
-                            )
+                                bufferedMsAtStart = exoPlayer.bufferedPosition - exoPlayer.currentPosition,
+                            ),
                         )
                     }
                 }
@@ -107,8 +108,8 @@ class Media3EventAdapter(
                                 sessionId = sessionId,
                                 eventId = newEventId(),
                                 timestampMs = System.currentTimeMillis(),
-                                durationMs = System.currentTimeMillis() - startedAt
-                            )
+                                durationMs = System.currentTimeMillis() - startedAt,
+                            ),
                         )
                     }
                 }
@@ -118,7 +119,7 @@ class Media3EventAdapter(
         override fun onDroppedVideoFrames(
             eventTime: AnalyticsListener.EventTime,
             droppedFrames: Int,
-            elapsedMs: Long
+            elapsedMs: Long,
         ) {
             publish(
                 DiagnosticEvent.DroppedFrames(
@@ -126,8 +127,8 @@ class Media3EventAdapter(
                     eventId = newEventId(),
                     timestampMs = System.currentTimeMillis(),
                     count = droppedFrames,
-                    elapsedMs = elapsedMs
-                )
+                    elapsedMs = elapsedMs,
+                ),
             )
         }
 
@@ -135,7 +136,7 @@ class Media3EventAdapter(
             eventTime: AnalyticsListener.EventTime,
             decoderName: String,
             initializedTimestampMs: Long,
-            initializationDurationMs: Long
+            initializationDurationMs: Long,
         ) {
             publish(decoderInitEvent(decoderName, initializationDurationMs, TrackType.VIDEO))
         }
@@ -144,7 +145,7 @@ class Media3EventAdapter(
             eventTime: AnalyticsListener.EventTime,
             decoderName: String,
             initializedTimestampMs: Long,
-            initializationDurationMs: Long
+            initializationDurationMs: Long,
         ) {
             publish(decoderInitEvent(decoderName, initializationDurationMs, TrackType.VIDEO))
         }
@@ -152,29 +153,30 @@ class Media3EventAdapter(
         private fun decoderInitEvent(
             decoderName: String,
             initDurationMs: Long,
-            trackType: TrackType
-        ): DiagnosticEvent.DecoderInit = DiagnosticEvent.DecoderInit(
-            sessionId = sessionId,
-            eventId = newEventId(),
-            timestampMs = System.currentTimeMillis(),
-            codecName = decoderName,
-            mimeType = "", // TODO: not exposed on this callback; cross-reference with
-            // codec-inspector's MediaCodecList lookup once that module exists.
-            initDurationMs = initDurationMs,
-            hardwareAccelerated = false, // TODO: Media3 doesn't expose this here directly;
-            // codec-inspector's CodecCapabilities lookup by
-            // decoderName is the real source of truth.
-            trackType = trackType,
-            decoderName = "",
-            isHardwareAccelerated = true
-        )
+            trackType: TrackType,
+        ): DiagnosticEvent.DecoderInit =
+            DiagnosticEvent.DecoderInit(
+                sessionId = sessionId,
+                eventId = newEventId(),
+                timestampMs = System.currentTimeMillis(),
+                codecName = decoderName,
+                mimeType = "", // TODO: not exposed on this callback; cross-reference with
+                // codec-inspector's MediaCodecList lookup once that module exists.
+                initDurationMs = initDurationMs,
+                hardwareAccelerated = false, // TODO: Media3 doesn't expose this here directly;
+                // codec-inspector's CodecCapabilities lookup by
+                // decoderName is the real source of truth.
+                trackType = trackType,
+                decoderName = "",
+                isHardwareAccelerated = true,
+            )
 
         override fun onLoadError(
             eventTime: AnalyticsListener.EventTime,
             loadEventInfo: LoadEventInfo,
             mediaLoadData: MediaLoadData,
             error: IOException,
-            wasCanceled: Boolean
+            wasCanceled: Boolean,
         ) {
             publish(
                 DiagnosticEvent.LoadError(
@@ -189,14 +191,14 @@ class Media3EventAdapter(
                     // state. Leaving at 0 rather than fabricating a number.
                     retryCount = 0,
                     errorMessage = error.message,
-                    wasCanceled = false
-                )
+                    wasCanceled = false,
+                ),
             )
         }
 
         override fun onPlayerError(
             eventTime: AnalyticsListener.EventTime,
-            error: PlaybackException
+            error: PlaybackException,
         ) {
             publish(
                 DiagnosticEvent.PlaybackError(
@@ -205,25 +207,27 @@ class Media3EventAdapter(
                     timestampMs = System.currentTimeMillis(),
                     errorCode = error.errorCodeName,
                     cause = error.cause?.message,
-                    isFatal = true
-                )
+                    isFatal = true,
+                ),
             )
         }
     }
 
-    private fun classifyLoadError(error: IOException): LoadErrorClass = when {
-        error is SocketTimeoutException -> LoadErrorClass.TIMEOUT
-        error is UnknownHostException -> LoadErrorClass.DNS
-        extractHttpStatus(error)?.let { it in 400..499 } == true -> LoadErrorClass.HTTP_4XX
-        extractHttpStatus(error)?.let { it in 500..599 } == true -> LoadErrorClass.HTTP_5XX
-        else -> LoadErrorClass.UNKNOWN
-    }
+    private fun classifyLoadError(error: IOException): LoadErrorClass =
+        when {
+            error is SocketTimeoutException -> LoadErrorClass.TIMEOUT
+            error is UnknownHostException -> LoadErrorClass.DNS
+            extractHttpStatus(error)?.let { it in 400..499 } == true -> LoadErrorClass.HTTP_4XX
+            extractHttpStatus(error)?.let { it in 500..599 } == true -> LoadErrorClass.HTTP_5XX
+            else -> LoadErrorClass.UNKNOWN
+        }
 
-    private fun extractHttpStatus(error: IOException): Int? {
-        return (error as? HttpDataSource.InvalidResponseCodeException)?.responseCode
-    }
+    private fun extractHttpStatus(error: IOException): Int? = (error as? HttpDataSource.InvalidResponseCodeException)?.responseCode
 
-    override fun onAttach(bus: DiagnosticEventBus, sessionId: String) {
+    override fun onAttach(
+        bus: DiagnosticEventBus,
+        sessionId: String,
+    ) {
         this.bus = bus
         this.sessionId = sessionId
         exoPlayer.addAnalyticsListener(listener)

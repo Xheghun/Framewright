@@ -11,7 +11,7 @@ enum class DrmScheme {
 }
 
 @Serializable
-enum class TrackType { VIDEO, AUDIO, TEXT}
+enum class TrackType { VIDEO, AUDIO, TEXT }
 
 @Serializable
 enum class LoadErrorClass { TIMEOUT, HTTP_4XX, HTTP_5XX, DNS, UNKNOWN }
