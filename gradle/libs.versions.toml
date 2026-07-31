@@ -17,6 +17,7 @@ material = "1.10.0"
 kotlinx-serialize = "1.7.1"
 kotlinx-coroutines = "1.9.0"
 androidx-media3 = "1.4.1"
+media3Ui = "1.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +45,10 @@ kolinx-serialization = {group = "org.jetbrains.kotlinx", name = "kotlinx-seriali
 kolinx-coroutines = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines"}
 kolinx-coroutines-test = {group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines"}
 androidx-media3-exoplayer = {group = "androidx.media3", name = "media3-exoplayer", version.ref = "androidx-media3"}
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
+androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "androidx-media3" }
+androidx-media3-exoplayer-dash = { group = "androidx.media3", name = "media3-exoplayer-dash", version.ref = "androidx-media3" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
