@@ -19,9 +19,7 @@ class SessionSummaryCalculator {
         val firstFrame = events.getOrNull(firstFrameIndex) as? DiagnosticEvent.RenderFirstFrame
         val sessionEnd = events.filterIsInstance<DiagnosticEvent.SessionEnd>().lastOrNull()
         val rebuffers =
-            if (firstFrameIndex >=
-                0
-            ) {
+            if (firstFrameIndex >= 0) {
                 events.drop(firstFrameIndex + 1).filterIsInstance<DiagnosticEvent.RebufferEnd>()
             } else {
                 emptyList()
