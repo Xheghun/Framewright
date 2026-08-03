@@ -209,82 +209,82 @@ class DiagnosticEventJsonCodec(
                     wire.elapsedRealtimeMs,
                     wire.playerState?.let(PlayerState::valueOf),
                 )
-            val p = wire.payload
+            val payload = wire.payload
             CodecResult.Success(
                 when (type) {
                     EventType.SESSION_START ->
                         DiagnosticEvent.SessionStart(
                             metadata,
-                            p.string("mediaUri"),
-                            p.nullableString("drmScheme")?.let(DrmScheme::valueOf),
-                            p.string("deviceModel"),
-                            p.string("osVersion"),
-                            p.string("appVersion"),
+                            payload.string("mediaUri"),
+                            payload.nullableString("drmScheme")?.let(DrmScheme::valueOf),
+                            payload.string("deviceModel"),
+                            payload.string("osVersion"),
+                            payload.string("appVersion"),
                         )
                     EventType.SESSION_END ->
                         DiagnosticEvent.SessionEnd(
                             metadata,
-                            p.long("durationMs"),
-                            SessionEndReason.valueOf(p.string("reason")),
+                            payload.long("durationMs"),
+                            SessionEndReason.valueOf(payload.string("reason")),
                         )
-                    EventType.RENDER_FIRST_FRAME -> DiagnosticEvent.RenderFirstFrame(metadata, p.long("elapsedSincePrepareMs"))
-                    EventType.REBUFFER_START -> DiagnosticEvent.RebufferStart(metadata, p.long("bufferedMsAtStart"))
-                    EventType.REBUFFER_END -> DiagnosticEvent.RebufferEnd(metadata, p.long("durationMs"))
+                    EventType.RENDER_FIRST_FRAME -> DiagnosticEvent.RenderFirstFrame(metadata, payload.long("elapsedSincePrepareMs"))
+                    EventType.REBUFFER_START -> DiagnosticEvent.RebufferStart(metadata, payload.long("bufferedMsAtStart"))
+                    EventType.REBUFFER_END -> DiagnosticEvent.RebufferEnd(metadata, payload.long("durationMs"))
                     EventType.TRACK_SWITCH ->
                         DiagnosticEvent.TrackSwitch(
                             metadata,
-                            p.nullableObject("fromFormat")?.toFormat(),
-                            p.obj("toFormat").toFormat(),
-                            TrackSwitchReason.valueOf(p.string("reason")),
-                            p.long("estimatedBandwidthBps"),
-                            p.long("bufferedDurationMs"),
+                            payload.nullableObject("fromFormat")?.toFormat(),
+                            payload.obj("toFormat").toFormat(),
+                            TrackSwitchReason.valueOf(payload.string("reason")),
+                            payload.long("estimatedBandwidthBps"),
+                            payload.long("bufferedDurationMs"),
                         )
                     EventType.DECODER_INIT ->
                         DiagnosticEvent.DecoderInit(
                             metadata,
-                            p.string("decoderName"),
-                            p.string("mimeType"),
-                            TrackType.valueOf(p.string("trackType")),
-                            p.long("initializationDurationMs"),
-                            p.boolean("isHardwareAccelerated"),
+                            payload.string("decoderName"),
+                            payload.string("mimeType"),
+                            TrackType.valueOf(payload.string("trackType")),
+                            payload.long("initializationDurationMs"),
+                            payload.boolean("isHardwareAccelerated"),
                         )
-                    EventType.DROPPED_FRAMES -> DiagnosticEvent.DroppedFrames(metadata, p.int("count"), p.long("elapsedMs"))
+                    EventType.DROPPED_FRAMES -> DiagnosticEvent.DroppedFrames(metadata, payload.int("count"), payload.long("elapsedMs"))
                     EventType.LOAD_ERROR ->
                         DiagnosticEvent.LoadError(
                             metadata,
-                            p.string("uri"),
-                            p.nullableInt("httpStatus"),
-                            LoadErrorClass.valueOf(p.string("errorClass")),
-                            p.int("retryCount"),
-                            p.boolean("wasCanceled"),
-                            p.nullableString("errorMessage"),
+                            payload.string("uri"),
+                            payload.nullableInt("httpStatus"),
+                            LoadErrorClass.valueOf(payload.string("errorClass")),
+                            payload.int("retryCount"),
+                            payload.boolean("wasCanceled"),
+                            payload.nullableString("errorMessage"),
                         )
                     EventType.DRM_KEY_STATUS ->
                         DiagnosticEvent.DrmKeyStatus(
                             metadata,
-                            p.string("keyId"),
-                            DrmKeyState.valueOf(p.string("status")),
-                            p.string("securityLevel"),
-                            p.nullableLong("expirationTimeMs"),
+                            payload.string("keyId"),
+                            DrmKeyState.valueOf(payload.string("status")),
+                            payload.string("securityLevel"),
+                            payload.nullableLong("expirationTimeMs"),
                         )
                     EventType.BANDWIDTH_SAMPLE ->
                         DiagnosticEvent.BandwidthSample(
                             metadata,
-                            p.long("segmentSizeBytes"),
-                            p.long("downloadDurationMs"),
-                            p.long("instantaneousBps"),
-                            p.long("fastEstimateBps"),
-                            p.long("slowEstimateBps"),
-                            p.long("defaultEstimateBps"),
-                            p.double("confidence"),
+                            payload.long("segmentSizeBytes"),
+                            payload.long("downloadDurationMs"),
+                            payload.long("instantaneousBps"),
+                            payload.long("fastEstimateBps"),
+                            payload.long("slowEstimateBps"),
+                            payload.long("defaultEstimateBps"),
+                            payload.double("confidence"),
                         )
                     EventType.PLAYBACK_ERROR ->
                         DiagnosticEvent.PlaybackError(
                             metadata,
-                            p.string("errorCode"),
-                            p.nullableString("errorMessage"),
-                            p.nullableString("cause"),
-                            p.boolean("isFatal"),
+                            payload.string("errorCode"),
+                            payload.nullableString("errorMessage"),
+                            payload.nullableString("cause"),
+                            payload.boolean("isFatal"),
                         )
                 },
             )
