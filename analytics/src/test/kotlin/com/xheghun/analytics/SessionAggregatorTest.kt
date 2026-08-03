@@ -1,149 +1,130 @@
 package com.xheghun.analytics
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class SessionAggregatorTest {
-    private fun startEvent(
-        sessionId: String,
-        eventId: String,
-    ) = DiagnosticEvent.SessionStart(
-        sessionId = sessionId,
-        eventId = eventId,
-        timestampMs = 0L,
-        mediaUri = "uri",
-        drmScheme = null,
-        deviceModel = "x",
-        osVersion = "y",
-        appVersion = "z",
-    )
+    @Test
+    fun `records isolated sessions in insertion order`() {
+        val aggregator = SessionAggregator()
+        val primarySessionId = "primary-playback-session"
+        val secondarySessionId = "secondary-playback-session"
+        val primaryFirstFrame =
+            DiagnosticEvent.RenderFirstFrame(
+                metadata(primarySessionId, "primary-first-frame"),
+                elapsedSincePrepareMs = 10,
+            )
+        val primaryDroppedFrames =
+            DiagnosticEvent.DroppedFrames(
+                metadata(primarySessionId, "primary-dropped-frames"),
+                count = 2,
+                elapsedMs = 100,
+            )
+        val secondaryFirstFrame =
+            DiagnosticEvent.RenderFirstFrame(
+                metadata(secondarySessionId, "secondary-first-frame"),
+                elapsedSincePrepareMs = 20,
+            )
+
+        aggregator.record(primaryFirstFrame)
+        aggregator.record(secondaryFirstFrame)
+        aggregator.record(primaryDroppedFrames)
+
+        assertThat(aggregator.eventsFor(primarySessionId)).containsExactly(primaryFirstFrame, primaryDroppedFrames)
+        assertThat(aggregator.eventsFor(secondarySessionId)).containsExactly(secondaryFirstFrame)
+    }
 
     @Test
-    fun `records events and exports them under the same session id`() {
-        val aggregator = SessionAggregator()
-        val sessionId = "session-1"
+    fun `truncates oldest events and marks snapshot`() {
+        val aggregator = SessionAggregator(maxEventsPerSession = 2)
+        repeat(3) { frameIndex ->
+            aggregator.record(
+                DiagnosticEvent.RenderFirstFrame(
+                    metadata(eventId = "rendered-frame-$frameIndex"),
+                    elapsedSincePrepareMs = frameIndex.toLong(),
+                ),
+            )
+        }
 
-        aggregator.record(startEvent(sessionId, "e1"))
+        val truncatedSessionSnapshot = aggregator.snapshot("session-1")
+
+        assertThat(truncatedSessionSnapshot.events.map { it.eventId })
+            .containsExactly("rendered-frame-1", "rendered-frame-2")
+        assertThat(truncatedSessionSnapshot.truncated).isTrue()
+    }
+
+    @Test
+    fun `snapshot is immutable copy and clear is session scoped`() {
+        val aggregator = SessionAggregator()
+        val sessionToClear = "completed-playback-session"
+        val sessionToRetain = "active-playback-session"
         aggregator.record(
             DiagnosticEvent.RenderFirstFrame(
-                sessionId = sessionId,
-                eventId = "e2",
-                timestampMs = 1450L,
-                elapsedSincePrepareMs = 450L,
+                metadata(sessionToClear, "completed-session-first-frame"),
+                elapsedSincePrepareMs = 1,
             ),
         )
-
-        val events = aggregator.eventsFor(sessionId)
-        assertEquals(2, events.size)
-        assertTrue(events[0] is DiagnosticEvent.SessionStart)
-        assertTrue(events[1] is DiagnosticEvent.RenderFirstFrame)
-    }
-
-    @Test
-    fun `exported json round-trips through the schema`() {
-        val aggregator = SessionAggregator()
-        val sessionId = "session-2"
         aggregator.record(
-            DiagnosticEvent.RebufferStart(
-                sessionId = sessionId,
-                eventId = "e1",
-                timestampMs = 2000L,
-                bufferedMsAtStart = 500L,
+            DiagnosticEvent.RenderFirstFrame(
+                metadata(sessionToRetain, "active-session-first-frame"),
+                elapsedSincePrepareMs = 2,
             ),
         )
+        val snapshotCapturedBeforeClear = aggregator.snapshot(sessionToClear)
 
-        val result = aggregator.exportSessionJson(sessionId)
-        assertTrue(result is ExportResult.Success)
-        val parsed = Json.decodeFromString<ExportedSession>((result as ExportResult.Success).json)
+        aggregator.clear(sessionToClear)
 
-        assertEquals(1, parsed.schemaVersion)
-        assertEquals(sessionId, parsed.sessionId)
-        assertFalse(parsed.truncated)
-        assertEquals(1, parsed.events.size)
-        assertTrue(parsed.events.first() is DiagnosticEvent.RebufferStart)
+        assertThat(snapshotCapturedBeforeClear.events.size).isEqualTo(1)
+        assertThat(aggregator.eventsFor(sessionToClear)).isEmpty()
+        assertThat(aggregator.eventsFor(sessionToRetain).size).isEqualTo(1)
+        assertThat(aggregator.isTruncated("unknown-playback-session")).isFalse()
     }
 
     @Test
-    fun `different sessions do not leak events into each other`() {
-        val aggregator = SessionAggregator()
-        aggregator.record(startEvent("a", "e1"))
-        aggregator.record(startEvent("b", "e2"))
-
-        assertEquals(1, aggregator.eventsFor("a").size)
-        assertEquals(1, aggregator.eventsFor("b").size)
+    fun `rejects invalid retention limit`() {
+        assertThrows<IllegalArgumentException> { SessionAggregator(0) }
     }
 
     @Test
-    fun `clear removes events for a session`() {
-        val aggregator = SessionAggregator()
-        aggregator.record(
-            DiagnosticEvent.PlaybackError(
-                sessionId = "s",
-                eventId = "e1",
-                timestampMs = 0L,
-                errorCode = "SOURCE_ERROR",
-                cause = null,
-                isFatal = true,
-            ),
-        )
-        aggregator.clear("s")
-        assertTrue(aggregator.eventsFor("s").isEmpty())
-    }
-
-    @Test
-    fun `session exceeding max events is truncated and oldest events are evicted`() {
-        val aggregator = SessionAggregator(maxEventsPerSession = 10)
-        val sessionId = "long-session"
-
-        repeat(15) { i ->
-            aggregator.record(startEvent(sessionId, "e$i"))
-        }
-
-        val events = aggregator.eventsFor(sessionId)
-        assertEquals(10, events.size)
-        assertTrue(aggregator.isTruncated(sessionId))
-        // oldest 5 (e0..e4) should have been evicted; e5 should be the first remaining
-        assertEquals("e5", events.first().eventId)
-        assertEquals("e14", events.last().eventId)
-
-        val result = aggregator.exportSessionJson(sessionId) as ExportResult.Success
-        val parsed = Json.decodeFromString<ExportedSession>(result.json)
-        assertTrue(parsed.truncated)
-    }
-
-    @Test
-    fun `exportSession for unknown session returns an empty, non-truncated success`() {
-        val aggregator = SessionAggregator()
-        val result = aggregator.exportSessionJson("never-recorded") as ExportResult.Success
-        val parsed = Json.decodeFromString<ExportedSession>(result.json)
-        assertTrue(parsed.events.isEmpty())
-        assertFalse(parsed.truncated)
-    }
-
-    @Test
-    fun `concurrent record calls from many coroutines lose no events`() =
-        runBlocking {
-            val aggregator = SessionAggregator(maxEventsPerSession = 10_000)
-            val sessionId = "concurrent-session"
-            val coroutineCount = 50
-            val eventsPerCoroutine = 100
-
-            val jobs =
-                (0 until coroutineCount).map { coroutineIndex ->
-                    async {
-                        repeat(eventsPerCoroutine) { i ->
-                            aggregator.record(startEvent(sessionId, "c$coroutineIndex-e$i"))
-                        }
-                    }
+    fun `records concurrently on real worker threads without loss`() {
+        val workerCount = 8
+        val eventsPerWorker = 500
+        val expectedEventCount = workerCount * eventsPerWorker
+        val concurrentSessionId = "concurrent-playback-session"
+        val aggregator = SessionAggregator(maxEventsPerSession = expectedEventCount)
+        val workerPool = Executors.newFixedThreadPool(workerCount)
+        val startAllWorkers = CountDownLatch(1)
+        val allWorkersFinished = CountDownLatch(workerCount)
+        repeat(workerCount) { workerIndex ->
+            workerPool.execute {
+                startAllWorkers.await()
+                repeat(eventsPerWorker) { eventIndex ->
+                    aggregator.record(
+                        DiagnosticEvent.RenderFirstFrame(
+                            metadata(
+                                sessionId = concurrentSessionId,
+                                eventId = "worker-$workerIndex-first-frame-$eventIndex",
+                            ),
+                            elapsedSincePrepareMs = eventIndex.toLong(),
+                        ),
+                    )
                 }
-            jobs.awaitAll()
-
-            assertEquals(coroutineCount * eventsPerCoroutine, aggregator.eventsFor(sessionId).size)
+                allWorkersFinished.countDown()
+            }
         }
+
+        startAllWorkers.countDown()
+        assertThat(allWorkersFinished.await(10, TimeUnit.SECONDS)).isTrue()
+        workerPool.shutdownNow()
+        assertThat(aggregator.eventsFor(concurrentSessionId).size).isEqualTo(expectedEventCount)
+    }
 }
