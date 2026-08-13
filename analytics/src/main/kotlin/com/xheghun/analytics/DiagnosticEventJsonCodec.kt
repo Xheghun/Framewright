@@ -57,6 +57,12 @@ private data class WireSession(
 )
 
 @Serializable
+private data class WireEventEnvelope(
+    val schemaVersion: Int,
+    val event: WireEvent,
+)
+
+@Serializable
 private data class WireEvent(
     val sessionId: String,
     val eventId: String,
@@ -75,6 +81,28 @@ class DiagnosticEventJsonCodec(
             explicitNulls = true
         },
 ) {
+    fun encodeEvent(event: DiagnosticEvent): CodecResult<String> =
+        try {
+            CodecResult.Success(json.encodeToString(WireEventEnvelope(DIAGNOSTIC_SCHEMA_VERSION, toWire(event))))
+        } catch (error: Exception) {
+            CodecResult.Failure(CodecError.InvalidPayload(event.type.name, error.message ?: "Unable to encode event"))
+        }
+
+    fun decodeEvent(value: String): CodecResult<DiagnosticEvent> {
+        val envelope =
+            try {
+                json.decodeFromString<WireEventEnvelope>(value)
+            } catch (error: SerializationException) {
+                return CodecResult.Failure(CodecError.MalformedJson(error.message ?: "Malformed JSON"))
+            } catch (error: IllegalArgumentException) {
+                return CodecResult.Failure(CodecError.MalformedJson(error.message ?: "Malformed JSON"))
+            }
+        if (envelope.schemaVersion != DIAGNOSTIC_SCHEMA_VERSION) {
+            return CodecResult.Failure(CodecError.UnsupportedSchemaVersion(envelope.schemaVersion))
+        }
+        return fromWire(envelope.event)
+    }
+
     fun encodeSession(snapshot: SessionSnapshot): CodecResult<String> =
         try {
             CodecResult.Success(

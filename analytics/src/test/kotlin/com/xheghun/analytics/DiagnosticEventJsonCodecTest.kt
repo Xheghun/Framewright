@@ -11,6 +11,25 @@ class DiagnosticEventJsonCodecTest {
     private val codec = DiagnosticEventJsonCodec()
 
     @Test
+    fun `single event round trips with schema version`() {
+        val event =
+            DiagnosticEvent.DecoderInit(
+                metadata(),
+                decoderName = "vendor.decoder",
+                mimeType = "video/avc",
+                trackType = TrackType.VIDEO,
+                initializationDurationMs = 12,
+                isHardwareAccelerated = null,
+            )
+
+        val encoded = codec.encodeEvent(event) as CodecResult.Success
+        val decoded = codec.decodeEvent(encoded.data) as CodecResult.Success
+
+        assertThat(encoded.data).contains("\"schemaVersion\": 2")
+        assertThat(decoded.data).isEqualTo(event)
+    }
+
+    @Test
     fun `all v2 event types round trip without domain loss`() {
         val snapshot = SessionSnapshot(sessionId = "session-1", truncated = true, events = allEventTypes())
 

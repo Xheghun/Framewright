@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation(project(":media3-adapter"))
     implementation(project(":analytics"))
+    implementation(project(":storage"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
