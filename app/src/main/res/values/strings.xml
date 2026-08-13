@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Framewright</string>
+    <string name="export_latest_session">Export latest session</string>
+    <string name="export_flush_failed">Could not flush diagnostics</string>
+    <string name="export_no_session">No diagnostic session available</string>
+    <string name="export_failed">Could not export diagnostics</string>
+    <string name="share_diagnostic_session">Share diagnostic session</string>
+    <string name="export_share_failed">No app is available to share diagnostics</string>
 </resources>

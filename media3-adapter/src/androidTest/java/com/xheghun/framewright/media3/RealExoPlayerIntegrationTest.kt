@@ -14,6 +14,9 @@ import com.xheghun.analytics.CodecResult
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventPipeline
 import com.xheghun.analytics.LoadErrorClass
+import com.xheghun.framewright.storage.FramewrightStorage
+import com.xheghun.framewright.storage.StorageResult
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,6 +32,7 @@ class RealExoPlayerIntegrationTest {
     fun realExoPlayerTerminalCallbackReachesSessionExport() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val playbackEnded = CountDownLatch(1)
+        val storage = FramewrightStorage.createInMemory(context)
         lateinit var player: ExoPlayer
         lateinit var diagnostics: Media3DiagnosticsSession
 
@@ -41,13 +45,24 @@ class RealExoPlayerIntegrationTest {
                     }
                 },
             )
-            diagnostics = FramewrightMedia3.attach(context, player)
+            diagnostics =
+                FramewrightMedia3.attach(
+                    context,
+                    player,
+                    configuration = Media3DiagnosticsConfiguration(eventSinks = listOf(storage.eventSink)),
+                )
             diagnostics.trackPrepare(MediaSessionInfo("https://example.test/empty-playlist")) {
                 player.prepare()
             }
         }
 
         assertTrue("ExoPlayer did not report STATE_ENDED", playbackEnded.await(5, TimeUnit.SECONDS))
+        runBlocking {
+            assertTrue(storage.eventSink.flush() is StorageResult.Success)
+            val storedSessions = storage.sessionStore.listSessions() as StorageResult.Success
+            val storedExport = storage.sessionStore.exportSession(storedSessions.data.single().sessionId)
+            assertTrue(storedExport is StorageResult.Success)
+        }
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val events = requireNotNull(diagnostics.currentSnapshot()).session.events
@@ -57,6 +72,7 @@ class RealExoPlayerIntegrationTest {
             diagnostics.close()
             player.release()
         }
+        runBlocking { storage.close() }
     }
 
     @Test

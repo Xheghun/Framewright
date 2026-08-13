@@ -80,6 +80,11 @@ object FramewrightMedia3 {
                     "Framewright must be called on ExoPlayer's application thread"
                 }
             },
+            pipeline =
+                DiagnosticEventPipeline(
+                    sinks = configuration.eventSinks,
+                    onSinkError = { _, _, error -> runCatching { configuration.onDiagnosticsError(error) } },
+                ),
         )
     }
 }

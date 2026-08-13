@@ -13,6 +13,52 @@ import org.junit.jupiter.api.Test
 
 class DiagnosticEventPipelineTest {
     @Test
+    fun `delivers events to sinks in configured order before live delivery`() =
+        runTest {
+            val deliveryOrder = mutableListOf<String>()
+            val event = DiagnosticEvent.RenderFirstFrame(metadata(), 450)
+            val pipeline =
+                DiagnosticEventPipeline(
+                    sinks =
+                        listOf(
+                            DiagnosticEventSink { deliveryOrder += "first-sink" },
+                            DiagnosticEventSink { deliveryOrder += "second-sink" },
+                        ),
+                )
+
+            pipeline.events.test {
+                pipeline.tryPublish(event)
+                deliveryOrder += "live-${awaitItem().eventId}"
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(deliveryOrder).containsExactly("first-sink", "second-sink", "live-event-1")
+        }
+
+    @Test
+    fun `sink failure is reported and does not prevent other delivery`() {
+        val deliveredEvents = mutableListOf<DiagnosticEvent>()
+        val sinkErrors = mutableListOf<Throwable>()
+        val event = DiagnosticEvent.RenderFirstFrame(metadata(), 450)
+        val pipeline =
+            DiagnosticEventPipeline(
+                sinks =
+                    listOf(
+                        DiagnosticEventSink { error("disk unavailable") },
+                        DiagnosticEventSink(deliveredEvents::add),
+                    ),
+                onSinkError = { _, _, error -> sinkErrors += error },
+            )
+
+        val result = pipeline.tryPublish(event)
+
+        assertThat(result.sinkFailureCount).isEqualTo(1)
+        assertThat(deliveredEvents).containsExactly(event)
+        assertThat(sinkErrors.single().message).isEqualTo("disk unavailable")
+        assertThat(pipeline.snapshot("session-1").events).containsExactly(event)
+    }
+
+    @Test
     fun `records event when there are no live subscribers`() {
         val pipeline = DiagnosticEventPipeline()
         val event = DiagnosticEvent.RenderFirstFrame(metadata(), 450)

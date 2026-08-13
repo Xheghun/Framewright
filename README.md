@@ -40,6 +40,26 @@ Framewright is organized into specialized modules to ensure a clean separation o
 ./gradlew :app:assembleDebug
 ```
 
+### Persist diagnostic sessions
+
+Create one process-scoped storage instance for each database and pass its sink when attaching
+Framewright. The host still owns the player and its lifecycle.
+
+```kotlin
+val storage = FramewrightStorage.create(applicationContext)
+val diagnostics = FramewrightMedia3.attach(
+    context = context,
+    player = player,
+    configuration = Media3DiagnosticsConfiguration(
+        eventSinks = listOf(storage.eventSink),
+    ),
+)
+
+// Before reading or shutting down:
+storage.eventSink.flush()
+val sessions = storage.sessionStore.listSessions()
+```
+
 ---
 
 > [!NOTE]

@@ -2,9 +2,30 @@ package com.xheghun.framewright.media3
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.xheghun.analytics.DiagnosticEvent
+import com.xheghun.analytics.DiagnosticEventSink
 import org.junit.jupiter.api.Test
 
 class Media3DiagnosticsConfigurationTest {
+    @Test
+    fun `existing trailing lambda configuration construction remains valid`() {
+        var reportedMessage: String? = null
+        val configuration = Media3DiagnosticsConfiguration { error -> reportedMessage = error.message }
+
+        configuration.onDiagnosticsError(IllegalStateException("diagnostic failure"))
+
+        assertThat(reportedMessage).isEqualTo("diagnostic failure")
+    }
+
+    @Test
+    fun `configuration retains event sinks`() {
+        val sink = DiagnosticEventSink { _: DiagnosticEvent -> }
+
+        val configuration = Media3DiagnosticsConfiguration(eventSinks = listOf(sink))
+
+        assertThat(configuration.eventSinks).isEqualTo(listOf(sink))
+    }
+
     @Test
     fun `default sanitizer removes credentials query and fragment`() {
         val sanitizer = Media3DiagnosticsConfiguration().uriSanitizer
