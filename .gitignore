@@ -10,3 +10,6 @@
 local.properties
 **/build/
 ~$*.docx
+/media3-adapter/.gitignore
+/Engineering-Design-Document.md
+/frame-plan.md
