@@ -1,6 +1,6 @@
 package com.xheghun.analytics
 
-const val DIAGNOSTIC_SCHEMA_VERSION: Int = 1
+const val DIAGNOSTIC_SCHEMA_VERSION: Int = 2
 
 enum class EventType {
     SESSION_START,
@@ -121,7 +121,7 @@ sealed interface DiagnosticEvent {
         val mimeType: String,
         val trackType: TrackType,
         val initializationDurationMs: Long,
-        val isHardwareAccelerated: Boolean,
+        val isHardwareAccelerated: Boolean?,
     ) : DiagnosticEvent {
         override val type = EventType.DECODER_INIT
     }

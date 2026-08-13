@@ -19,7 +19,7 @@ Framewright is organized into specialized modules to ensure a clean separation o
 | Module | Description |
 | :--- | :--- |
 | [`:analytics`](file:///analytics) | Pure Kotlin core for tracking session lifecycle and diagnostic events. |
-| [`:player-core`](file:///player-core) | Media3/ExoPlayer implementation and event mapping. |
+| [`:media3-adapter`](file:///media3-adapter) | Attach-first Media3 instrumentation and event mapping; the host retains player ownership. |
 | [`:bandwidth-monitor`](file:///bandwidth-monitor) | Custom bandwidth estimators and ABR tracking logic. |
 | [`:codec-inspector`](file:///codec-inspector) | Device capability reporting (HW vs. SW codecs). |
 | [`:drm-inspector`](file:///drm-inspector) | DRM key status tracking and failure cataloging. |

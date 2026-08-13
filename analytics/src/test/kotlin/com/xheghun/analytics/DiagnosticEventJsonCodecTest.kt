@@ -11,7 +11,7 @@ class DiagnosticEventJsonCodecTest {
     private val codec = DiagnosticEventJsonCodec()
 
     @Test
-    fun `all v1 event types round trip without domain loss`() {
+    fun `all v2 event types round trip without domain loss`() {
         val snapshot = SessionSnapshot(sessionId = "session-1", truncated = true, events = allEventTypes())
 
         val encoded = codec.encodeSession(snapshot) as CodecResult.Success
@@ -28,7 +28,7 @@ class DiagnosticEventJsonCodecTest {
                 SessionSnapshot(sessionId = "session-1", truncated = false, events = listOf(event)),
             ) as CodecResult.Success
 
-        assertThat(encoded.data).contains("\"schemaVersion\": 1")
+        assertThat(encoded.data).contains("\"schemaVersion\": 2")
         assertThat(encoded.data).contains("\"type\": \"RENDER_FIRST_FRAME\"")
         assertThat(encoded.data).contains("\"playerState\": \"READY\"")
         assertThat(encoded.data).contains("\"payload\": {")
@@ -36,7 +36,7 @@ class DiagnosticEventJsonCodecTest {
         val expected =
             """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "sessionId": "session-1",
               "truncated": false,
               "events": [{
@@ -54,8 +54,28 @@ class DiagnosticEventJsonCodecTest {
     }
 
     @Test
+    fun `unknown decoder acceleration round trips as null`() {
+        val decoder =
+            DiagnosticEvent.DecoderInit(
+                metadata = metadata(),
+                decoderName = "vendor.decoder",
+                mimeType = "video/avc",
+                trackType = TrackType.VIDEO,
+                initializationDurationMs = 12,
+                isHardwareAccelerated = null,
+            )
+        val snapshot = SessionSnapshot(sessionId = "session-1", truncated = false, events = listOf(decoder))
+
+        val encoded = codec.encodeSession(snapshot) as CodecResult.Success
+        val decoded = codec.decodeSession(encoded.data) as CodecResult.Success
+
+        assertThat(encoded.data).contains("\"isHardwareAccelerated\": null")
+        assertThat(decoded.data).isEqualTo(snapshot)
+    }
+
+    @Test
     fun `unsupported schema version returns typed failure`() {
-        val json = """{"schemaVersion":2,"sessionId":"s","truncated":false,"events":[]}"""
+        val json = """{"schemaVersion":3,"sessionId":"s","truncated":false,"events":[]}"""
         val result = codec.decodeSession(json)
 
         assertThat(result).isInstanceOf<CodecResult.Failure>()
@@ -67,7 +87,7 @@ class DiagnosticEventJsonCodecTest {
         val json =
             """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "sessionId": "s",
               "truncated": false,
               "events": [{
@@ -91,7 +111,7 @@ class DiagnosticEventJsonCodecTest {
         val json =
             """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "sessionId": "s",
               "truncated": false,
               "events": [{
