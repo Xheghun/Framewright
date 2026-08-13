@@ -15,9 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.xheghun.framewright.media3.FramewrightMedia3
+import com.xheghun.framewright.media3.MediaSessionInfo
 import com.xheghun.framewright.ui.theme.FramewrightTheme
-import com.xheghun.player_core.FramewrightExoPlayerController
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -45,13 +48,14 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val controller = remember { FramewrightExoPlayerController(context) }
+    val player = remember { ExoPlayer.Builder(context).build() }
+    val diagnostics = remember { FramewrightMedia3.attach(context, player) }
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { ctx ->
             PlayerView(ctx).apply {
-                player = controller.currentExoPlayer()
+                this.player = player
             }
         },
     )
@@ -59,17 +63,21 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     DisposableEffect(lifecycleOwner) {
         val collectorJob =
             kotlinx.coroutines.MainScope().launch {
-                controller.events.collect { event ->
+                diagnostics.events.collect { event ->
                     Log.d("Framewright", event.toString())
                 }
             }
 
-        controller.prepare(TEST_STREAM_URL)
-        controller.play()
+        player.setMediaItem(MediaItem.fromUri(TEST_STREAM_URL))
+        diagnostics.trackPrepare(MediaSessionInfo(mediaUri = TEST_STREAM_URL)) {
+            player.prepare()
+        }
+        player.play()
 
         onDispose {
             collectorJob.cancel()
-            controller.release()
+            diagnostics.close()
+            player.release()
         }
     }
 }

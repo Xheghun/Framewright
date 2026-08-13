@@ -25,7 +25,7 @@ dependencyResolutionManagement {
 rootProject.name = "Framewright"
 include(
     ":app",
-    ":player-core",
+    ":media3-adapter",
     ":analytics",
     ":bandwidth-monitor",
     ":drm-inspector",

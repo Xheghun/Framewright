@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":player-core"))
+    implementation(project(":media3-adapter"))
     implementation(project(":analytics"))
 
     implementation(platform(libs.androidx.compose.bom))
@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
 
     testImplementation(libs.junit)
