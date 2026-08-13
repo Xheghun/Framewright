@@ -1,5 +1,6 @@
 package com.xheghun.framewright.media3
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.Looper
@@ -61,12 +62,17 @@ object FramewrightMedia3 {
         context: Context,
         player: ExoPlayer,
         contributors: List<PlayerEventSource> = emptyList(),
+        configuration: Media3DiagnosticsConfiguration = Media3DiagnosticsConfiguration(),
     ): Media3DiagnosticsSession {
+        check(Looper.myLooper() == player.applicationLooper) {
+            "Framewright must be attached on ExoPlayer's application thread"
+        }
         val androidDeviceInfo = AndroidDeviceInfo(context.applicationContext)
         return DefaultMedia3DiagnosticsSession(
             player = ExoPlayerBridge(player),
             deviceInfo = androidDeviceInfo.value,
             contributors = contributors,
+            configuration = configuration,
             clock = SystemFramewrightClock,
             eventIdGenerator = { UUID.randomUUID().toString() },
             verifyThread = {
@@ -114,31 +120,40 @@ internal fun createSessionForTest(
     player: Media3PlayerBridge,
     deviceInfo: DeviceInfo,
     contributors: List<PlayerEventSource> = emptyList(),
+    configuration: Media3DiagnosticsConfiguration = Media3DiagnosticsConfiguration(),
     clock: FramewrightClock,
     eventIdGenerator: () -> String,
     verifyThread: () -> Unit = {},
-): Media3DiagnosticsSession = DefaultMedia3DiagnosticsSession(player, deviceInfo, contributors, clock, eventIdGenerator, verifyThread)
+    pipeline: DiagnosticEventPipeline = DiagnosticEventPipeline(),
+): Media3DiagnosticsSession =
+    DefaultMedia3DiagnosticsSession(player, deviceInfo, contributors, configuration, clock, eventIdGenerator, verifyThread, pipeline)
 
+@SuppressLint("UnsafeOptInUsageError")
 private class DefaultMedia3DiagnosticsSession(
     private val player: Media3PlayerBridge,
     private val deviceInfo: DeviceInfo,
     private val contributors: List<PlayerEventSource>,
+    private val configuration: Media3DiagnosticsConfiguration,
     private val clock: FramewrightClock,
     private val eventIdGenerator: () -> String,
     private val verifyThread: () -> Unit,
+    private val pipeline: DiagnosticEventPipeline = DiagnosticEventPipeline(),
 ) : Media3DiagnosticsSession {
-    private val pipeline = DiagnosticEventPipeline()
     private val summaryCalculator = SessionSummaryCalculator()
     private var activeSessionId: String? = null
     private var lastSessionId: String? = null
     private var sessionStartedAtElapsedMs = 0L
     private var closed = false
+    private val attachedSources = mutableListOf<PlayerEventSource>()
     private val adapter =
         FramewrightMedia3EventAdapter(
             player = player,
             clock = clock,
             eventIdGenerator = eventIdGenerator,
             onTerminalState = ::endSession,
+            uriSanitizer = ::sanitizeUri,
+            includeErrorMessages = configuration.includeErrorMessages,
+            onDiagnosticsError = ::reportDiagnosticsError,
         )
 
     override val events: SharedFlow<DiagnosticEvent> = pipeline.events
@@ -149,6 +164,7 @@ private class DefaultMedia3DiagnosticsSession(
     ): T {
         verifyUsable()
         activeSessionId?.let { finishSession(SessionEndReason.REPLACED) }
+        lastSessionId?.let(pipeline::clear)
         val sessionId = eventIdGenerator()
         activeSessionId = sessionId
         lastSessionId = sessionId
@@ -156,7 +172,7 @@ private class DefaultMedia3DiagnosticsSession(
         pipeline.tryPublish(
             DiagnosticEvent.SessionStart(
                 metadata(sessionId),
-                mediaUri = sessionInfo.mediaUri,
+                mediaUri = sanitizeUri(sessionInfo.mediaUri),
                 drmScheme = sessionInfo.drmScheme,
                 deviceModel = sessionInfo.deviceModel ?: deviceInfo.model,
                 osVersion = sessionInfo.osVersion ?: deviceInfo.osVersion,
@@ -164,16 +180,20 @@ private class DefaultMedia3DiagnosticsSession(
             ),
         )
         val sources = listOf(adapter) + contributors
+        sources.forEach { source ->
+            runCatching { source.attach(pipeline, sessionId) }
+                .onSuccess { attachedSources += source }
+                .onFailure(::reportDiagnosticsError)
+        }
+        adapter.markPrepareStart()
         try {
-            sources.forEach { it.attach(pipeline, sessionId) }
-            adapter.markPrepareStart()
             return prepare()
         } catch (error: Throwable) {
             pipeline.tryPublish(
                 DiagnosticEvent.PlaybackError(
                     metadata(sessionId),
                     errorCode = "HOST_PREPARE_FAILED",
-                    errorMessage = error.message,
+                    errorMessage = error.message.takeIf { configuration.includeErrorMessages },
                     cause = error::class.qualifiedName,
                     isFatal = true,
                 ),
@@ -190,8 +210,11 @@ private class DefaultMedia3DiagnosticsSession(
 
     private fun finishSession(reason: SessionEndReason) {
         val sessionId = activeSessionId ?: return
-        adapter.finishOpenRebuffer()
-        (listOf(adapter) + contributors).forEach { it.detach() }
+        runCatching(adapter::finishOpenRebuffer).onFailure(::reportDiagnosticsError)
+        attachedSources.asReversed().forEach { source ->
+            runCatching(source::detach).onFailure(::reportDiagnosticsError)
+        }
+        attachedSources.clear()
         pipeline.tryPublish(
             DiagnosticEvent.SessionEnd(
                 metadata(sessionId),
@@ -231,6 +254,15 @@ private class DefaultMedia3DiagnosticsSession(
     private fun verifyUsable() {
         verifyThread()
         check(!closed) { "Media3DiagnosticsSession is closed" }
+    }
+
+    private fun sanitizeUri(uri: String): String =
+        runCatching { configuration.uriSanitizer.sanitize(uri) }
+            .onFailure(::reportDiagnosticsError)
+            .getOrDefault("<redacted>")
+
+    private fun reportDiagnosticsError(error: Throwable) {
+        runCatching { configuration.onDiagnosticsError(error) }
     }
 
     private fun metadata(sessionId: String) =

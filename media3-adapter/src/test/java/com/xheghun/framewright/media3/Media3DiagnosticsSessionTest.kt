@@ -10,6 +10,7 @@ import com.xheghun.analytics.AbstractPlayerEventSource
 import com.xheghun.analytics.CodecResult
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventPipeline
+import com.xheghun.analytics.PlayerEventSource
 import com.xheghun.analytics.SessionEndReason
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -99,13 +100,87 @@ class Media3DiagnosticsSessionTest {
         assertThat(contributor.attachedSessionIds.size).isEqualTo(1)
     }
 
-    private fun createDiagnostics(contributors: List<RecordingContributor> = emptyList()): Media3DiagnosticsSession =
+    @Test
+    fun `diagnostics failures do not block host preparation or session termination`() {
+        val reportedErrors = mutableListOf<Throwable>()
+        val failingAttachContributor = FailingAttachContributor()
+        val failingDetachContributor = FailingDetachContributor()
+        val healthyContributor = RecordingContributor()
+        val diagnostics =
+            createDiagnostics(
+                contributors = listOf(failingAttachContributor, failingDetachContributor, healthyContributor),
+                configuration = Media3DiagnosticsConfiguration(onDiagnosticsError = reportedErrors::add),
+            )
+
+        var hostPrepareCalled = false
+        diagnostics.trackPrepare(MediaSessionInfo("https://example.test/video.m3u8")) {
+            hostPrepareCalled = true
+        }
+        diagnostics.endSession()
+
+        val sessionEnds = requireNotNull(diagnostics.currentSnapshot()).session.events.filterIsInstance<DiagnosticEvent.SessionEnd>()
+        assertThat(hostPrepareCalled).isTrue()
+        assertThat(healthyContributor.detachCount).isEqualTo(1)
+        assertThat(player.listener).isNull()
+        assertThat(sessionEnds.size).isEqualTo(1)
+        assertThat(reportedErrors.size).isEqualTo(2)
+    }
+
+    @Test
+    fun `new preparation clears the previously retained session`() {
+        val pipeline = DiagnosticEventPipeline()
+        val diagnostics = createDiagnostics(pipeline = pipeline)
+        diagnostics.trackPrepare(MediaSessionInfo("https://example.test/first.m3u8")) {}
+        val firstSessionId = requireNotNull(diagnostics.currentSnapshot()).session.sessionId
+
+        diagnostics.trackPrepare(MediaSessionInfo("https://example.test/second.m3u8")) {}
+
+        assertThat(pipeline.snapshot(firstSessionId).events.isEmpty()).isTrue()
+    }
+
+    @Test
+    fun `session start stores a redacted media URI`() {
+        val diagnostics = createDiagnostics()
+
+        diagnostics.trackPrepare(MediaSessionInfo("https://user:password@example.test/master.m3u8?token=secret#fragment")) {}
+
+        val sessionStart =
+            requireNotNull(diagnostics.currentSnapshot())
+                .session.events
+                .filterIsInstance<DiagnosticEvent.SessionStart>()
+                .single()
+        assertThat(sessionStart.mediaUri).isEqualTo("https://example.test/master.m3u8")
+    }
+
+    @Test
+    fun `public operations reject calls from the wrong thread`() {
+        val diagnostics =
+            createSessionForTest(
+                player = player,
+                deviceInfo = DeviceInfo("Pixel 9", "16", "1.0"),
+                clock = clock,
+                eventIdGenerator = sequentialIds(),
+                verifyThread = { error("Wrong player thread") },
+            )
+
+        val thrown = assertThrows<IllegalStateException> { diagnostics.currentSnapshot() }
+
+        assertThat(thrown.message).isEqualTo("Wrong player thread")
+    }
+
+    private fun createDiagnostics(
+        contributors: List<PlayerEventSource> = emptyList(),
+        configuration: Media3DiagnosticsConfiguration = Media3DiagnosticsConfiguration(),
+        pipeline: DiagnosticEventPipeline = DiagnosticEventPipeline(),
+    ): Media3DiagnosticsSession =
         createSessionForTest(
             player = player,
             deviceInfo = DeviceInfo("Pixel 9", "16", "1.0"),
             contributors = contributors,
+            configuration = configuration,
             clock = clock,
             eventIdGenerator = sequentialIds(),
+            pipeline = pipeline,
         )
 
     private class RecordingContributor : AbstractPlayerEventSource() {
@@ -123,6 +198,28 @@ class Media3DiagnosticsSessionTest {
 
         override fun onDetach() {
             detachCount++
+        }
+    }
+
+    private class FailingAttachContributor : AbstractPlayerEventSource() {
+        override fun onAttach(
+            pipeline: DiagnosticEventPipeline,
+            sessionId: String,
+        ) {
+            error("Contributor attachment failed")
+        }
+
+        override fun onDetach() = Unit
+    }
+
+    private class FailingDetachContributor : AbstractPlayerEventSource() {
+        override fun onAttach(
+            pipeline: DiagnosticEventPipeline,
+            sessionId: String,
+        ) = Unit
+
+        override fun onDetach() {
+            error("Contributor detachment failed")
         }
     }
 }

@@ -24,13 +24,18 @@ import java.net.NoRouteToHostException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
+private const val SEEK_BUFFERING_CALLBACK_WINDOW_MS = 1_000L
+
 @UnstableApi
 internal class FramewrightMedia3EventAdapter(
     private val player: Media3PlayerBridge,
     private val clock: FramewrightClock,
     private val eventIdGenerator: () -> String,
     private val onTerminalState: (SessionEndReason) -> Unit,
-    private val decoderAccelerationResolver: (String) -> Boolean = ::isHardwareAccelerated,
+    private val uriSanitizer: (String) -> String = { it },
+    private val includeErrorMessages: Boolean = false,
+    private val onDiagnosticsError: (Throwable) -> Unit = {},
+    private val decoderAccelerationResolver: (String) -> Boolean? = ::isHardwareAccelerated,
 ) : AbstractPlayerEventSource() {
     private var pipeline: DiagnosticEventPipeline? = null
     private var sessionId = ""
@@ -39,6 +44,8 @@ internal class FramewrightMedia3EventAdapter(
     private var rebufferStartedAtMs: Long? = null
     private var videoMimeType = "unknown"
     private var audioMimeType = "unknown"
+    private var seekStartedAtMs: Long? = null
+    private val retryCountByLoadTaskId = mutableMapOf<Long, Int>()
 
     fun markPrepareStart() {
         prepareStartedAtMs = clock.elapsedRealtimeMs()
@@ -46,6 +53,8 @@ internal class FramewrightMedia3EventAdapter(
         rebufferStartedAtMs = null
         videoMimeType = "unknown"
         audioMimeType = "unknown"
+        seekStartedAtMs = null
+        retryCountByLoadTaskId.clear()
     }
 
     fun finishOpenRebuffer() {
@@ -74,6 +83,15 @@ internal class FramewrightMedia3EventAdapter(
                 state: Int,
             ) {
                 handlePlaybackStateChanged(state)
+            }
+
+            override fun onPositionDiscontinuity(
+                eventTime: AnalyticsListener.EventTime,
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                handlePositionDiscontinuity(reason)
             }
 
             override fun onDroppedVideoFrames(
@@ -125,14 +143,39 @@ internal class FramewrightMedia3EventAdapter(
                 error: IOException,
                 wasCanceled: Boolean,
             ) {
-                handleLoadError(loadEventInfo.uri.toString(), error, wasCanceled)
+                handleLoadError(loadEventInfo.loadTaskId, loadEventInfo.uri.toString(), error, wasCanceled)
+            }
+
+            override fun onLoadStarted(
+                eventTime: AnalyticsListener.EventTime,
+                loadEventInfo: LoadEventInfo,
+                mediaLoadData: MediaLoadData,
+                retryCount: Int,
+            ) {
+                handleLoadStarted(loadEventInfo.loadTaskId, retryCount)
+            }
+
+            override fun onLoadCompleted(
+                eventTime: AnalyticsListener.EventTime,
+                loadEventInfo: LoadEventInfo,
+                mediaLoadData: MediaLoadData,
+            ) {
+                handleLoadFinished(loadEventInfo.loadTaskId)
+            }
+
+            override fun onLoadCanceled(
+                eventTime: AnalyticsListener.EventTime,
+                loadEventInfo: LoadEventInfo,
+                mediaLoadData: MediaLoadData,
+            ) {
+                handleLoadFinished(loadEventInfo.loadTaskId)
             }
 
             override fun onPlayerError(
                 eventTime: AnalyticsListener.EventTime,
                 error: PlaybackException,
             ) {
-                handlePlayerError(error.errorCodeName, error.message, error.cause?.message)
+                handlePlayerError(error.errorCodeName, error.message, error.cause?.javaClass?.name)
             }
         }
 
@@ -150,12 +193,21 @@ internal class FramewrightMedia3EventAdapter(
     internal fun handlePlaybackStateChanged(state: Int) {
         when (state) {
             Player.STATE_BUFFERING -> startRebufferIfNeeded()
-            Player.STATE_READY -> finishOpenRebuffer()
+            Player.STATE_READY -> {
+                seekStartedAtMs = null
+                finishOpenRebuffer()
+            }
             Player.STATE_ENDED -> {
                 finishOpenRebuffer()
                 onTerminalState(SessionEndReason.PLAYBACK_ENDED)
             }
         }
+    }
+
+    internal fun handlePositionDiscontinuity(reason: Int) {
+        if (reason != Player.DISCONTINUITY_REASON_SEEK) return
+        finishOpenRebuffer()
+        seekStartedAtMs = clock.elapsedRealtimeMs()
     }
 
     internal fun handleDroppedFrames(
@@ -185,20 +237,34 @@ internal class FramewrightMedia3EventAdapter(
         publish(decoderEvent(decoderName, mimeType, trackType, initializationDurationMs))
     }
 
+    internal fun handleLoadStarted(
+        loadTaskId: Long,
+        retryCount: Int,
+    ) {
+        retryCountByLoadTaskId[loadTaskId] = retryCount.coerceAtLeast(0)
+    }
+
+    internal fun handleLoadFinished(loadTaskId: Long) {
+        retryCountByLoadTaskId.remove(loadTaskId)
+    }
+
     internal fun handleLoadError(
+        loadTaskId: Long,
         uri: String,
         error: IOException,
         wasCanceled: Boolean,
     ) {
+        val retryCount = retryCountByLoadTaskId[loadTaskId] ?: 0
+        if (wasCanceled) retryCountByLoadTaskId.remove(loadTaskId)
         publish(
             DiagnosticEvent.LoadError(
                 metadata = metadata(),
-                uri = uri,
+                uri = sanitizeUri(uri),
                 httpStatus = extractHttpStatus(error),
                 errorClass = classifyLoadError(error),
-                retryCount = 0,
+                retryCount = retryCount,
                 wasCanceled = wasCanceled,
-                errorMessage = error.message,
+                errorMessage = error.message.takeIf { includeErrorMessages },
             ),
         )
     }
@@ -213,7 +279,7 @@ internal class FramewrightMedia3EventAdapter(
             DiagnosticEvent.PlaybackError(
                 metadata = metadata(),
                 errorCode = errorCode,
-                errorMessage = errorMessage,
+                errorMessage = errorMessage.takeIf { includeErrorMessages },
                 cause = cause,
                 isFatal = true,
             ),
@@ -223,6 +289,11 @@ internal class FramewrightMedia3EventAdapter(
 
     private fun startRebufferIfNeeded() {
         if (!hasRenderedFirstFrame || rebufferStartedAtMs != null) return
+        val seekStartedAt = seekStartedAtMs
+        if (seekStartedAt != null) {
+            if (clock.elapsedRealtimeMs() - seekStartedAt <= SEEK_BUFFERING_CALLBACK_WINDOW_MS) return
+            seekStartedAtMs = null
+        }
         rebufferStartedAtMs = clock.elapsedRealtimeMs()
         publish(
             DiagnosticEvent.RebufferStart(
@@ -237,14 +308,20 @@ internal class FramewrightMedia3EventAdapter(
         mimeType: String,
         trackType: TrackType,
         initializationDurationMs: Long,
-    ) = DiagnosticEvent.DecoderInit(
-        metadata = metadata(),
-        decoderName = decoderName,
-        mimeType = mimeType,
-        trackType = trackType,
-        initializationDurationMs = initializationDurationMs,
-        isHardwareAccelerated = decoderAccelerationResolver(decoderName),
-    )
+    ): DiagnosticEvent.DecoderInit {
+        val isHardwareAccelerated =
+            runCatching { decoderAccelerationResolver(decoderName) }
+                .onFailure(::reportDiagnosticsError)
+                .getOrNull()
+        return DiagnosticEvent.DecoderInit(
+            metadata = metadata(),
+            decoderName = decoderName,
+            mimeType = mimeType,
+            trackType = trackType,
+            initializationDurationMs = initializationDurationMs,
+            isHardwareAccelerated = isHardwareAccelerated,
+        )
+    }
 
     private fun metadata() =
         DiagnosticEventMetadata(
@@ -259,6 +336,15 @@ internal class FramewrightMedia3EventAdapter(
         pipeline?.tryPublish(event)
     }
 
+    private fun sanitizeUri(uri: String): String =
+        runCatching { uriSanitizer(uri) }
+            .onFailure(::reportDiagnosticsError)
+            .getOrDefault("<redacted>")
+
+    private fun reportDiagnosticsError(error: Throwable) {
+        runCatching { onDiagnosticsError(error) }
+    }
+
     override fun onAttach(
         pipeline: DiagnosticEventPipeline,
         sessionId: String,
@@ -271,6 +357,7 @@ internal class FramewrightMedia3EventAdapter(
     override fun onDetach() {
         player.removeAnalyticsListener(listener)
         pipeline = null
+        retryCountByLoadTaskId.clear()
     }
 
     private fun classifyLoadError(error: IOException): LoadErrorClass =
@@ -286,13 +373,16 @@ internal class FramewrightMedia3EventAdapter(
     private fun extractHttpStatus(error: IOException): Int? = (error as? HttpDataSource.InvalidResponseCodeException)?.responseCode
 }
 
-private fun isHardwareAccelerated(decoderName: String): Boolean {
-    val codec = MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.firstOrNull { it.name == decoderName }
-    return when {
-        codec == null -> false
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> codec.isHardwareAccelerated
-        else ->
-            !decoderName.startsWith("OMX.google.", ignoreCase = true) &&
-                !decoderName.startsWith("c2.android.", ignoreCase = true)
+private val hardwareAccelerationByDecoderName: Map<String, Boolean> by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+    MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.associate { codec ->
+        codec.name to
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                codec.isHardwareAccelerated
+            } else {
+                !codec.name.startsWith("OMX.google.", ignoreCase = true) &&
+                    !codec.name.startsWith("c2.android.", ignoreCase = true)
+            }
     }
 }
+
+private fun isHardwareAccelerated(decoderName: String): Boolean? = hardwareAccelerationByDecoderName[decoderName]

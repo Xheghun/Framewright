@@ -16,7 +16,7 @@ appcompat = "1.6.1"
 material = "1.10.0"
 kotlinx-serialize = "1.7.1"
 kotlinx-coroutines = "1.9.0"
-androidx-media3 = "1.4.1"
+androidx-media3 = "1.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

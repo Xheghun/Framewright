@@ -155,7 +155,7 @@ class DiagnosticEventJsonCodec(
                     put("mimeType", event.mimeType)
                     put("trackType", event.trackType.name)
                     put("initializationDurationMs", event.initializationDurationMs)
-                    put("isHardwareAccelerated", event.isHardwareAccelerated)
+                    putNullable("isHardwareAccelerated", event.isHardwareAccelerated)
                 }
                 is DiagnosticEvent.DroppedFrames -> {
                     put("count", event.count)
@@ -246,7 +246,7 @@ class DiagnosticEventJsonCodec(
                             payload.string("mimeType"),
                             TrackType.valueOf(payload.string("trackType")),
                             payload.long("initializationDurationMs"),
-                            payload.boolean("isHardwareAccelerated"),
+                            payload.nullableBoolean("isHardwareAccelerated"),
                         )
                     EventType.DROPPED_FRAMES -> DiagnosticEvent.DroppedFrames(metadata, payload.int("count"), payload.long("elapsedMs"))
                     EventType.LOAD_ERROR ->
@@ -322,6 +322,8 @@ private fun JsonObject.double(key: String) = getValue(key).jsonPrimitive.double
 
 private fun JsonObject.boolean(key: String) = getValue(key).jsonPrimitive.boolean
 
+private fun JsonObject.nullableBoolean(key: String) = getValue(key).jsonPrimitive.contentOrNull?.toBooleanStrict()
+
 private fun JsonObject.obj(key: String) = getValue(key).jsonObject
 
 private fun JsonObject.nullableObject(key: String) = getValue(key).takeUnless { it is JsonNull }?.jsonObject
@@ -349,6 +351,16 @@ private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(
 private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(
     key: String,
     value: Long?,
+) {
+    put(
+        key,
+        value?.let(::JsonPrimitive) ?: JsonNull,
+    )
+}
+
+private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(
+    key: String,
+    value: Boolean?,
 ) {
     put(
         key,
