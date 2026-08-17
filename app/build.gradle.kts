@@ -41,6 +41,7 @@ android {
 dependencies {
     implementation(project(":media3-adapter"))
     implementation(project(":analytics"))
+    implementation(project(":bandwidth-monitor"))
     implementation(project(":storage"))
 
     implementation(platform(libs.androidx.compose.bom))
@@ -57,8 +58,7 @@ dependencies {
     implementation(libs.androidx.media3.ui)
 
     testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

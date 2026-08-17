@@ -26,8 +26,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.xheghun.framewright.bandwidth.FramewrightBandwidthMeter
 import com.xheghun.framewright.media3.FramewrightMedia3
 import com.xheghun.framewright.media3.Media3DiagnosticsConfiguration
 import com.xheghun.framewright.media3.MediaSessionInfo
@@ -40,6 +42,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class MainActivity : ComponentActivity() {
+    @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,6 +62,7 @@ class MainActivity : ComponentActivity() {
 private const val TEST_STREAM_URL =
     "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
 
+@UnstableApi
 @Composable
 fun PlayerScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -66,12 +70,14 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val storage = (context.applicationContext as FramewrightApplication).diagnosticsStorage
     val exportScope = rememberCoroutineScope()
 
-    val player = remember { ExoPlayer.Builder(context).build() }
+    val bandwidthMeter = remember { FramewrightBandwidthMeter(context.applicationContext) }
+    val player = remember { ExoPlayer.Builder(context).setBandwidthMeter(bandwidthMeter).build() }
     val diagnostics =
         remember {
             FramewrightMedia3.attach(
                 context,
                 player,
+                contributors = listOf(bandwidthMeter),
                 configuration = Media3DiagnosticsConfiguration(eventSinks = listOf(storage.eventSink)),
             )
         }
