@@ -54,7 +54,7 @@ class FramewrightBandwidthMeter internal constructor(
     private var sessionSampleCount = 0
     private var lastConfidence = 0.0
 
-    //Returns the latest estimates without exposing mutable estimator state.
+    // Returns the latest estimates without exposing mutable estimator state.
     val currentEstimate: BandwidthEstimateSnapshot
         get() =
             synchronized(lock) {
