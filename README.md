@@ -60,6 +60,27 @@ storage.eventSink.flush()
 val sessions = storage.sessionStore.listSessions()
 ```
 
+### Enable dual-estimator bandwidth diagnostics
+
+Construct the optional meter before the player, install it as ExoPlayer's active `BandwidthMeter`,
+and attach the same instance as an analytics contributor:
+
+```kotlin
+val bandwidthMeter = FramewrightBandwidthMeter(applicationContext)
+val player = ExoPlayer.Builder(context)
+    .setBandwidthMeter(bandwidthMeter)
+    .build()
+
+val diagnostics = FramewrightMedia3.attach(
+    context = context,
+    player = player,
+    contributors = listOf(bandwidthMeter),
+)
+```
+
+Framewright's dual-EWMA estimate drives selection. A private `DefaultBandwidthMeter` observes the
+same transfers for comparison, and both values are emitted in each `BANDWIDTH_SAMPLE` event.
+
 ---
 
 > [!NOTE]
