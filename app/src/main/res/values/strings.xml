@@ -6,4 +6,19 @@
     <string name="export_failed">Could not export diagnostics</string>
     <string name="share_diagnostic_session">Share diagnostic session</string>
     <string name="export_share_failed">No app is available to share diagnostics</string>
+    <string name="open_abr_explorer">ABR Explorer</string>
+    <string name="abr_explorer_title">ABR Explorer</string>
+    <string name="close_abr_explorer">Close</string>
+    <string name="abr_session_elapsed">Session elapsed: %1$s</string>
+    <string name="bandwidth_timeline">Bandwidth timeline</string>
+    <string name="custom_estimator">Framewright</string>
+    <string name="media3_default_estimator">Media3 default</string>
+    <string name="waiting_for_bandwidth_samples">Waiting for bandwidth samples…</string>
+    <string name="abr_timeline_description">Bandwidth chart containing %1$d samples</string>
+    <string name="abr_chart_range">Up to %1$s over %2$s</string>
+    <string name="bitrate_ladder">Bitrate ladder</string>
+    <string name="waiting_for_video_tracks">Waiting for video tracks…</string>
+    <string name="selected_track">Selected</string>
+    <string name="abr_decision_log">Selection decisions</string>
+    <string name="waiting_for_track_decisions">Waiting for video selection decisions…</string>
 </resources>

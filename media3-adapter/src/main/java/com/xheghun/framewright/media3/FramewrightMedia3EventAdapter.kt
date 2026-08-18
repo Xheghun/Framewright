@@ -2,9 +2,11 @@ package com.xheghun.framewright.media3
 
 import android.media.MediaCodecList
 import android.os.Build
+import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
@@ -15,8 +17,10 @@ import com.xheghun.analytics.AbstractPlayerEventSource
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventMetadata
 import com.xheghun.analytics.DiagnosticEventPipeline
+import com.xheghun.analytics.FormatSnapshot
 import com.xheghun.analytics.LoadErrorClass
 import com.xheghun.analytics.SessionEndReason
+import com.xheghun.analytics.TrackSwitchReason
 import com.xheghun.analytics.TrackType
 import java.io.IOException
 import java.net.ConnectException
@@ -45,6 +49,9 @@ internal class FramewrightMedia3EventAdapter(
     private var videoMimeType = "unknown"
     private var audioMimeType = "unknown"
     private var seekStartedAtMs: Long? = null
+    private var selectedVideoFormat: FormatSnapshot? = null
+    private var availableVideoFormats: List<FormatSnapshot> = emptyList()
+    private var latestBandwidthEstimateBps = 0L
     private val retryCountByLoadTaskId = mutableMapOf<Long, Int>()
 
     fun markPrepareStart() {
@@ -54,6 +61,9 @@ internal class FramewrightMedia3EventAdapter(
         videoMimeType = "unknown"
         audioMimeType = "unknown"
         seekStartedAtMs = null
+        selectedVideoFormat = null
+        availableVideoFormats = emptyList()
+        latestBandwidthEstimateBps = 0
         retryCountByLoadTaskId.clear()
     }
 
@@ -107,7 +117,7 @@ internal class FramewrightMedia3EventAdapter(
                 format: Format,
                 decoderReuseEvaluation: DecoderReuseEvaluation?,
             ) {
-                handleInputFormatChanged(TrackType.VIDEO, format.sampleMimeType)
+                handleVideoInputFormatChanged(format)
             }
 
             override fun onAudioInputFormatChanged(
@@ -134,6 +144,41 @@ internal class FramewrightMedia3EventAdapter(
                 initializationDurationMs: Long,
             ) {
                 handleDecoderInitialized(decoderName, TrackType.AUDIO, initializationDurationMs)
+            }
+
+            override fun onTracksChanged(
+                eventTime: AnalyticsListener.EventTime,
+                tracks: Tracks,
+            ) {
+                handleAvailableVideoFormats(
+                    tracks.groups
+                        .filter { it.type == C.TRACK_TYPE_VIDEO }
+                        .flatMap { group ->
+                            (0 until group.length)
+                                .filter(group::isTrackSupported)
+                                .map(group::getTrackFormat)
+                        },
+                )
+            }
+
+            override fun onBandwidthEstimate(
+                eventTime: AnalyticsListener.EventTime,
+                totalLoadTimeMs: Int,
+                totalBytesLoaded: Long,
+                bitrateEstimate: Long,
+            ) {
+                handleBandwidthEstimate(bitrateEstimate)
+            }
+
+            override fun onDownstreamFormatChanged(
+                eventTime: AnalyticsListener.EventTime,
+                mediaLoadData: MediaLoadData,
+            ) {
+                handleDownstreamFormatChanged(
+                    mediaLoadData.trackType,
+                    mediaLoadData.trackFormat,
+                    mediaLoadData.trackSelectionReason,
+                )
             }
 
             override fun onLoadError(
@@ -228,6 +273,17 @@ internal class FramewrightMedia3EventAdapter(
         }
     }
 
+    internal fun handleVideoInputFormatChanged(format: Format) {
+        handleInputFormatChanged(TrackType.VIDEO, format.sampleMimeType)
+        val inferredReason =
+            if (selectedVideoFormat == null) {
+                C.SELECTION_REASON_INITIAL
+            } else {
+                C.SELECTION_REASON_ADAPTIVE
+            }
+        handleVideoFormatSelected(format, inferredReason)
+    }
+
     internal fun handleDecoderInitialized(
         decoderName: String,
         trackType: TrackType,
@@ -235,6 +291,53 @@ internal class FramewrightMedia3EventAdapter(
     ) {
         val mimeType = if (trackType == TrackType.VIDEO) videoMimeType else audioMimeType
         publish(decoderEvent(decoderName, mimeType, trackType, initializationDurationMs))
+    }
+
+    internal fun handleAvailableVideoFormats(formats: List<Format>) {
+        availableVideoFormats =
+            formats
+                .map(Format::toSnapshot)
+                .distinct()
+                .sortedBy(FormatSnapshot::bitrate)
+    }
+
+    internal fun handleBandwidthEstimate(bitrateEstimateBps: Long) {
+        latestBandwidthEstimateBps = bitrateEstimateBps.coerceAtLeast(0)
+    }
+
+    internal fun handleDownstreamFormatChanged(
+        media3TrackType: Int,
+        format: Format?,
+        media3SelectionReason: Int,
+    ) {
+        if (media3TrackType != C.TRACK_TYPE_VIDEO || format == null) return
+        handleVideoFormatSelected(format, media3SelectionReason)
+    }
+
+    internal fun handleVideoFormatSelected(
+        format: Format,
+        media3SelectionReason: Int,
+    ) {
+        val nextFormat = format.toSnapshot()
+        val previousFormat = selectedVideoFormat
+        if (nextFormat == previousFormat) return
+        selectedVideoFormat = nextFormat
+        val ladder =
+            (availableVideoFormats + nextFormat)
+                .distinct()
+                .sortedBy(FormatSnapshot::bitrate)
+        availableVideoFormats = ladder
+        publish(
+            DiagnosticEvent.TrackSwitch(
+                metadata = metadata(),
+                fromFormat = previousFormat,
+                toFormat = nextFormat,
+                reason = trackSwitchReason(previousFormat, nextFormat, media3SelectionReason),
+                estimatedBandwidthBps = latestBandwidthEstimateBps,
+                bufferedDurationMs = (player.bufferedPosition - player.currentPosition).coerceAtLeast(0),
+                availableVideoFormats = ladder,
+            ),
+        )
     }
 
     internal fun handleLoadStarted(
@@ -345,6 +448,21 @@ internal class FramewrightMedia3EventAdapter(
         runCatching { onDiagnosticsError(error) }
     }
 
+    private fun trackSwitchReason(
+        previousFormat: FormatSnapshot?,
+        nextFormat: FormatSnapshot,
+        media3SelectionReason: Int,
+    ): TrackSwitchReason =
+        when {
+            previousFormat == null || media3SelectionReason == C.SELECTION_REASON_INITIAL -> TrackSwitchReason.INITIAL
+            media3SelectionReason == C.SELECTION_REASON_MANUAL -> TrackSwitchReason.MANUAL_OVERRIDE
+            media3SelectionReason == C.SELECTION_REASON_ADAPTIVE && nextFormat.bitrate > previousFormat.bitrate ->
+                TrackSwitchReason.BANDWIDTH_INCREASE
+            media3SelectionReason == C.SELECTION_REASON_ADAPTIVE && nextFormat.bitrate < previousFormat.bitrate ->
+                TrackSwitchReason.BANDWIDTH_DECREASE
+            else -> TrackSwitchReason.UNKNOWN
+        }
+
     override fun onAttach(
         pipeline: DiagnosticEventPipeline,
         sessionId: String,
@@ -386,3 +504,13 @@ private val hardwareAccelerationByDecoderName: Map<String, Boolean> by lazy(Lazy
 }
 
 private fun isHardwareAccelerated(decoderName: String): Boolean? = hardwareAccelerationByDecoderName[decoderName]
+
+@UnstableApi
+private fun Format.toSnapshot() =
+    FormatSnapshot(
+        width = width.takeUnless { it == Format.NO_VALUE },
+        height = height.takeUnless { it == Format.NO_VALUE },
+        bitrate = bitrate.takeUnless { it == Format.NO_VALUE }?.coerceAtLeast(0) ?: 0,
+        mimeType = sampleMimeType,
+        codecs = codecs,
+    )

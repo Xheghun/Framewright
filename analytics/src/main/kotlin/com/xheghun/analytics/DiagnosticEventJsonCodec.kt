@@ -8,10 +8,12 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
@@ -177,6 +179,12 @@ class DiagnosticEventJsonCodec(
                     put("reason", event.reason.name)
                     put("estimatedBandwidthBps", event.estimatedBandwidthBps)
                     put("bufferedDurationMs", event.bufferedDurationMs)
+                    put(
+                        "availableVideoFormats",
+                        buildJsonArray {
+                            event.availableVideoFormats.forEach { add(formatJson(it)) }
+                        },
+                    )
                 }
                 is DiagnosticEvent.DecoderInit -> {
                     put("decoderName", event.decoderName)
@@ -266,6 +274,7 @@ class DiagnosticEventJsonCodec(
                             TrackSwitchReason.valueOf(payload.string("reason")),
                             payload.long("estimatedBandwidthBps"),
                             payload.long("bufferedDurationMs"),
+                            payload.optionalFormatList("availableVideoFormats"),
                         )
                     EventType.DECODER_INIT ->
                         DiagnosticEvent.DecoderInit(
@@ -355,6 +364,9 @@ private fun JsonObject.nullableBoolean(key: String) = getValue(key).jsonPrimitiv
 private fun JsonObject.obj(key: String) = getValue(key).jsonObject
 
 private fun JsonObject.nullableObject(key: String) = getValue(key).takeUnless { it is JsonNull }?.jsonObject
+
+private fun JsonObject.optionalFormatList(key: String): List<FormatSnapshot> =
+    get(key)?.jsonArray?.map { it.jsonObject.toFormat() }.orEmpty()
 
 private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(
     key: String,

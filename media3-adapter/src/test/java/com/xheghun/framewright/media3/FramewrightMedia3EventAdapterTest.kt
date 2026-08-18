@@ -1,5 +1,7 @@
 package com.xheghun.framewright.media3
 
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import assertk.assertThat
@@ -11,6 +13,7 @@ import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventPipeline
 import com.xheghun.analytics.LoadErrorClass
 import com.xheghun.analytics.SessionEndReason
+import com.xheghun.analytics.TrackSwitchReason
 import com.xheghun.analytics.TrackType
 import org.junit.jupiter.api.Test
 import java.net.ConnectException
@@ -75,6 +78,125 @@ class FramewrightMedia3EventAdapterTest {
         assertThat(decoders.map { it.mimeType }).containsExactly("video/avc", "audio/mp4a-latm")
         assertThat(decoders.first().isHardwareAccelerated).isEqualTo(true)
         assertThat(decoders.last().isHardwareAccelerated).isEqualTo(false)
+    }
+
+    @Test
+    fun `initial video selection includes sorted supported ladder and current playback evidence`() {
+        attachForPreparation()
+        player.currentPosition = 1_000
+        player.bufferedPosition = 6_500
+        val low = videoFormat(width = 854, height = 480, bitrate = 900_000)
+        val high = videoFormat(width = 1920, height = 1080, bitrate = 5_000_000)
+        adapter.handleAvailableVideoFormats(listOf(high, low, low))
+
+        adapter.handleDownstreamFormatChanged(C.TRACK_TYPE_VIDEO, low, C.SELECTION_REASON_INITIAL)
+
+        val event =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.TrackSwitch>()
+                .single()
+        assertThat(event.fromFormat).isEqualTo(null)
+        assertThat(event.toFormat.bitrate).isEqualTo(900_000)
+        assertThat(event.reason).isEqualTo(TrackSwitchReason.INITIAL)
+        assertThat(event.estimatedBandwidthBps).isEqualTo(0)
+        assertThat(event.bufferedDurationMs).isEqualTo(5_500)
+        assertThat(event.availableVideoFormats.map { it.bitrate }).containsExactly(900_000, 5_000_000)
+    }
+
+    @Test
+    fun `adaptive selections map direction and suppress duplicate downstream formats`() {
+        attachForPreparation()
+        val low = videoFormat(width = 854, height = 480, bitrate = 900_000)
+        val high = videoFormat(width = 1920, height = 1080, bitrate = 5_000_000)
+        adapter.handleBandwidthEstimate(6_200_000)
+        adapter.handleVideoFormatSelected(low, C.SELECTION_REASON_INITIAL)
+
+        adapter.handleVideoFormatSelected(high, C.SELECTION_REASON_ADAPTIVE)
+        adapter.handleVideoFormatSelected(high, C.SELECTION_REASON_ADAPTIVE)
+        adapter.handleVideoFormatSelected(low, C.SELECTION_REASON_ADAPTIVE)
+
+        val events = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.TrackSwitch>()
+        assertThat(events.map { it.reason })
+            .containsExactly(
+                TrackSwitchReason.INITIAL,
+                TrackSwitchReason.BANDWIDTH_INCREASE,
+                TrackSwitchReason.BANDWIDTH_DECREASE,
+            )
+        assertThat(events.map { it.estimatedBandwidthBps }).containsExactly(6_200_000L, 6_200_000L, 6_200_000L)
+    }
+
+    @Test
+    fun `manual and unsupported selection evidence map without inventing a cause`() {
+        attachForPreparation()
+        val low = videoFormat(width = 854, height = 480, bitrate = 900_000)
+        val middle = videoFormat(width = 1280, height = 720, bitrate = 2_000_000)
+        val high = videoFormat(width = 1920, height = 1080, bitrate = 5_000_000)
+        adapter.handleVideoFormatSelected(low, C.SELECTION_REASON_INITIAL)
+
+        adapter.handleVideoFormatSelected(high, C.SELECTION_REASON_MANUAL)
+        adapter.handleVideoFormatSelected(middle, C.SELECTION_REASON_UNKNOWN)
+
+        val events = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.TrackSwitch>()
+        assertThat(events.map { it.reason })
+            .containsExactly(TrackSwitchReason.INITIAL, TrackSwitchReason.MANUAL_OVERRIDE, TrackSwitchReason.UNKNOWN)
+    }
+
+    @Test
+    fun `audio formats are ignored and prepare reset makes next video selection initial`() {
+        attachForPreparation()
+        val video = videoFormat(width = 1280, height = 720, bitrate = 2_000_000)
+        val audio =
+            Format
+                .Builder()
+                .setSampleMimeType("audio/mp4a-latm")
+                .setAverageBitrate(128_000)
+                .build()
+        adapter.handleDownstreamFormatChanged(C.TRACK_TYPE_AUDIO, audio, C.SELECTION_REASON_INITIAL)
+        adapter.handleVideoFormatSelected(video, C.SELECTION_REASON_INITIAL)
+
+        adapter.markPrepareStart()
+        adapter.handleVideoFormatSelected(video, C.SELECTION_REASON_ADAPTIVE)
+
+        val events = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.TrackSwitch>()
+        assertThat(events.size).isEqualTo(2)
+        assertThat(events.last().fromFormat).isEqualTo(null)
+        assertThat(events.last().reason).isEqualTo(TrackSwitchReason.INITIAL)
+    }
+
+    @Test
+    fun `unknown Media3 format values become safe diagnostic values`() {
+        attachForPreparation()
+
+        adapter.handleVideoFormatSelected(Format.Builder().setSampleMimeType("video/avc").build(), C.SELECTION_REASON_INITIAL)
+
+        val format =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.TrackSwitch>()
+                .single()
+                .toFormat
+        assertThat(format.width).isEqualTo(null)
+        assertThat(format.height).isEqualTo(null)
+        assertThat(format.bitrate).isEqualTo(0)
+    }
+
+    @Test
+    fun `video input format callback provides fallback selection telemetry`() {
+        attachForPreparation()
+        val low = videoFormat(width = 854, height = 480, bitrate = 900_000)
+        val high = videoFormat(width = 1920, height = 1080, bitrate = 5_000_000)
+
+        adapter.handleVideoInputFormatChanged(low)
+        adapter.handleVideoInputFormatChanged(high)
+
+        val events = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.TrackSwitch>()
+        assertThat(events.map { it.reason })
+            .containsExactly(TrackSwitchReason.INITIAL, TrackSwitchReason.BANDWIDTH_INCREASE)
+        assertThat(events.last().fromFormat?.bitrate).isEqualTo(900_000)
+        assertThat(events.last().toFormat.bitrate).isEqualTo(5_000_000)
     }
 
     @Test
@@ -196,4 +318,18 @@ class FramewrightMedia3EventAdapterTest {
         adapter.attach(pipeline, "playback-session")
         adapter.markPrepareStart()
     }
+
+    private fun videoFormat(
+        width: Int,
+        height: Int,
+        bitrate: Int,
+    ): Format =
+        Format
+            .Builder()
+            .setWidth(width)
+            .setHeight(height)
+            .setAverageBitrate(bitrate)
+            .setSampleMimeType("video/avc")
+            .setCodecs("avc1.640028")
+            .build()
 }

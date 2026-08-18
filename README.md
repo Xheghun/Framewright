@@ -7,7 +7,7 @@ Unlike typical video players, Framewright focuses on **observability** and **rep
 ## Key Features
 
 - **Media-Agnostic Analytics**: A core telemetry engine that decouples event logic from the specific player implementation.
-- **ABR Explorer**: Real-time visualization of bandwidth estimation vs. track selection(WIP).
+- **ABR Explorer**: Real-time bandwidth comparison, bitrate-ladder state, and track-selection decisions.
 - **Diagnostics Overlay**: A performance-focused Compose overlay for monitoring resolution, codecs, and buffer health in-situ(WIP).
 - **DRM Inspector**: Detailed Widevine status reporting and a catalog of reproducible failure signatures(WIP).
 - **Media Lab**: A fixture-driven simulation environment to reproduce edge-case bugs without real network infrastructure(WIP).
@@ -80,6 +80,9 @@ val diagnostics = FramewrightMedia3.attach(
 
 Framewright's dual-EWMA estimate drives selection. A private `DefaultBandwidthMeter` observes the
 same transfers for comparison, and both values are emitted in each `BANDWIDTH_SAMPLE` event.
+The sample app's **ABR Explorer** consumes those samples alongside Media3 track-switch callbacks,
+keeps a bounded in-memory timeline, and displays the active format and decision history without
+taking ownership of playback.
 
 ---
 
