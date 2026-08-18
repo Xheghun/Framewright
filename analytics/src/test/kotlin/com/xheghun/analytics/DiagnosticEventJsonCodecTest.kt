@@ -93,6 +93,36 @@ class DiagnosticEventJsonCodecTest {
     }
 
     @Test
+    fun `legacy track switch without available formats decodes with empty ladder`() {
+        val json =
+            """
+            {
+              "schemaVersion": 2,
+              "event": {
+                "sessionId": "session-1",
+                "eventId": "track-switch-1",
+                "timestampMs": 1000,
+                "elapsedRealtimeMs": 1000,
+                "type": "TRACK_SWITCH",
+                "playerState": "READY",
+                "payload": {
+                  "fromFormat": null,
+                  "toFormat": {"width": 1280, "height": 720, "bitrate": 2000000, "mimeType": "video/avc", "codecs": "avc1"},
+                  "reason": "INITIAL",
+                  "estimatedBandwidthBps": 3000000,
+                  "bufferedDurationMs": 5000
+                }
+              }
+            }
+            """.trimIndent()
+
+        val result = codec.decodeEvent(json) as CodecResult.Success
+        val trackSwitch = result.data as DiagnosticEvent.TrackSwitch
+
+        assertThat(trackSwitch.availableVideoFormats).isEqualTo(emptyList())
+    }
+
+    @Test
     fun `unsupported schema version returns typed failure`() {
         val json = """{"schemaVersion":3,"sessionId":"s","truncated":false,"events":[]}"""
         val result = codec.decodeSession(json)

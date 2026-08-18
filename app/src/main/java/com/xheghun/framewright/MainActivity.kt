@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -25,10 +26,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.xheghun.framewright.abr.AbrExplorerAction
+import com.xheghun.framewright.abr.AbrExplorerScreen
+import com.xheghun.framewright.abr.AbrExplorerViewModel
 import com.xheghun.framewright.bandwidth.FramewrightBandwidthMeter
 import com.xheghun.framewright.media3.FramewrightMedia3
 import com.xheghun.framewright.media3.Media3DiagnosticsConfiguration
@@ -36,6 +42,7 @@ import com.xheghun.framewright.media3.MediaSessionInfo
 import com.xheghun.framewright.storage.FramewrightStorage
 import com.xheghun.framewright.storage.StorageResult
 import com.xheghun.framewright.ui.theme.FramewrightTheme
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -68,7 +75,9 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val storage = (context.applicationContext as FramewrightApplication).diagnosticsStorage
-    val exportScope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope()
+    val abrExplorerViewModel: AbrExplorerViewModel = viewModel()
+    val abrExplorerState by abrExplorerViewModel.state.collectAsStateWithLifecycle()
 
     val bandwidthMeter = remember { FramewrightBandwidthMeter(context.applicationContext) }
     val player = remember { ExoPlayer.Builder(context).setBandwidthMeter(bandwidthMeter).build() }
@@ -94,20 +103,35 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
         Button(
             modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
             onClick = {
-                exportScope.launch {
+                coroutineScope.launch {
                     exportLatestSession(context, storage)
                 }
             },
         ) {
             Text(stringResource(R.string.export_latest_session))
         }
+        if (!abrExplorerState.isVisible) {
+            Button(
+                modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
+                onClick = { abrExplorerViewModel.onAction(AbrExplorerAction.ToggleVisibility) },
+            ) {
+                Text(stringResource(R.string.open_abr_explorer))
+            }
+        }
+        if (abrExplorerState.isVisible) {
+            AbrExplorerScreen(
+                state = abrExplorerState,
+                onAction = abrExplorerViewModel::onAction,
+            )
+        }
     }
 
     DisposableEffect(lifecycleOwner) {
         val collectorJob =
-            kotlinx.coroutines.MainScope().launch {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 diagnostics.events.collect { event ->
                     Log.d("Framewright", event.toString())
+                    abrExplorerViewModel.onDiagnosticEvent(event)
                 }
             }
 

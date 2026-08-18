@@ -21,6 +21,12 @@ internal fun allEventTypes(): List<DiagnosticEvent> =
             reason = TrackSwitchReason.BANDWIDTH_INCREASE,
             estimatedBandwidthBps = 6_200_000,
             bufferedDurationMs = 8_400,
+            availableVideoFormats =
+                listOf(
+                    FormatSnapshot(854, 480, 1_000_000, "video/avc", "avc1"),
+                    FormatSnapshot(1280, 720, 2_000_000, "video/avc", "avc1"),
+                    FormatSnapshot(1920, 1080, 5_000_000, "video/avc", "avc1"),
+                ),
         ),
         DiagnosticEvent.DecoderInit(
             metadata(eventId = "6"),

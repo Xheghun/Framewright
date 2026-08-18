@@ -111,6 +111,7 @@ sealed interface DiagnosticEvent {
         val reason: TrackSwitchReason,
         val estimatedBandwidthBps: Long,
         val bufferedDurationMs: Long,
+        val availableVideoFormats: List<FormatSnapshot> = emptyList(),
     ) : DiagnosticEvent {
         override val type = EventType.TRACK_SWITCH
     }
