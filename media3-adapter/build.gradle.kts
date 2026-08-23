@@ -39,7 +39,6 @@ dependencies {
     testImplementation(libs.kolinx.coroutines.test)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
-
 }
 
 tasks.withType<Test>().configureEach {
