@@ -1,5 +1,6 @@
 package com.xheghun.framewright.media3
 
+import com.xheghun.analytics.DecoderCapabilityResolver
 import com.xheghun.analytics.DiagnosticEventSink
 import java.net.URI
 
@@ -11,13 +12,21 @@ class Media3DiagnosticsConfiguration(
     val uriSanitizer: DiagnosticUriSanitizer = DiagnosticUriSanitizer(::redactSensitiveUriParts),
     val includeErrorMessages: Boolean = false,
     val eventSinks: List<DiagnosticEventSink> = emptyList(),
+    val decoderCapabilityResolver: DecoderCapabilityResolver? = null,
     val onDiagnosticsError: (Throwable) -> Unit = {},
 ) {
     constructor(
         uriSanitizer: DiagnosticUriSanitizer,
         includeErrorMessages: Boolean,
         onDiagnosticsError: (Throwable) -> Unit,
-    ) : this(uriSanitizer, includeErrorMessages, emptyList(), onDiagnosticsError)
+    ) : this(uriSanitizer, includeErrorMessages, emptyList(), null, onDiagnosticsError)
+
+    constructor(
+        uriSanitizer: DiagnosticUriSanitizer,
+        includeErrorMessages: Boolean,
+        eventSinks: List<DiagnosticEventSink>,
+        onDiagnosticsError: (Throwable) -> Unit,
+    ) : this(uriSanitizer, includeErrorMessages, eventSinks, null, onDiagnosticsError)
 }
 
 private fun redactSensitiveUriParts(value: String): String {

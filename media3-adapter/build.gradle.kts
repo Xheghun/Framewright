@@ -25,6 +25,8 @@ android {
 
 dependencies {
     api(project(":analytics"))
+    androidTestImplementation(project(":codec-inspector"))
+    androidTestImplementation(project(":storage"))
 
     api(libs.kolinx.coroutines)
     api(libs.androidx.media3.exoplayer)
@@ -37,7 +39,7 @@ dependencies {
     testImplementation(libs.kolinx.coroutines.test)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(project(":storage"))
+
 }
 
 tasks.withType<Test>().configureEach {

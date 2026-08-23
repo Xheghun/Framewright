@@ -42,6 +42,7 @@ dependencies {
     implementation(project(":media3-adapter"))
     implementation(project(":analytics"))
     implementation(project(":bandwidth-monitor"))
+    implementation(project(":codec-inspector"))
     implementation(project(":storage"))
 
     implementation(platform(libs.androidx.compose.bom))

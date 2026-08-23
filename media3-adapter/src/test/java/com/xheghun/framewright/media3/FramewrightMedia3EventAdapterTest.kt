@@ -9,6 +9,11 @@ import assertk.assertions.containsExactly
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
+import com.xheghun.analytics.CodecClassificationSource
+import com.xheghun.analytics.CodecFormatSupport
+import com.xheghun.analytics.CodecImplementationType
+import com.xheghun.analytics.DecoderCapabilitySnapshot
+import com.xheghun.analytics.DecoderInspectionRequest
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventPipeline
 import com.xheghun.analytics.LoadErrorClass
@@ -78,6 +83,69 @@ class FramewrightMedia3EventAdapterTest {
         assertThat(decoders.map { it.mimeType }).containsExactly("video/avc", "audio/mp4a-latm")
         assertThat(decoders.first().isHardwareAccelerated).isEqualTo(true)
         assertThat(decoders.last().isHardwareAccelerated).isEqualTo(false)
+    }
+
+    @Test
+    fun `selected video decoder includes optional inspected capabilities`() {
+        val inspectionRequests = mutableListOf<DecoderInspectionRequest>()
+        val inspectingAdapter =
+            FramewrightMedia3EventAdapter(
+                player = player,
+                clock = clock,
+                eventIdGenerator = sequentialIds(),
+                onTerminalState = terminalReasons::add,
+                decoderAccelerationResolver = { true },
+                decoderCapabilityResolver = { request ->
+                    inspectionRequests += request
+                    inspectedSoftwareCapability()
+                },
+            )
+        inspectingAdapter.attach(pipeline, "playback-session")
+        inspectingAdapter.markPrepareStart()
+        inspectingAdapter.handleVideoInputFormatChanged(videoFormat(width = 1_920, height = 1_080, bitrate = 5_000_000))
+
+        inspectingAdapter.handleDecoderInitialized("c2.android.avc.decoder", TrackType.VIDEO, 16)
+
+        val decoder =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                .single()
+        assertThat(inspectionRequests.single().decoderName).isEqualTo("c2.android.avc.decoder")
+        assertThat(inspectionRequests.single().format?.width).isEqualTo(1_920)
+        assertThat(decoder.capabilities).isEqualTo(inspectedSoftwareCapability())
+        assertThat(decoder.isHardwareAccelerated).isEqualTo(false)
+    }
+
+    @Test
+    fun `inspector failure reports diagnostics error and retains fallback classification`() {
+        val reportedErrors = mutableListOf<Throwable>()
+        val resilientAdapter =
+            FramewrightMedia3EventAdapter(
+                player = player,
+                clock = clock,
+                eventIdGenerator = sequentialIds(),
+                onTerminalState = terminalReasons::add,
+                onDiagnosticsError = reportedErrors::add,
+                decoderAccelerationResolver = { true },
+                decoderCapabilityResolver = { error("Codec inspection failed") },
+            )
+        resilientAdapter.attach(pipeline, "playback-session")
+        resilientAdapter.markPrepareStart()
+        resilientAdapter.handleInputFormatChanged(TrackType.VIDEO, "video/avc")
+
+        resilientAdapter.handleDecoderInitialized("vendor.decoder", TrackType.VIDEO, 10)
+
+        val decoder =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                .single()
+        assertThat(decoder.capabilities).isEqualTo(null)
+        assertThat(decoder.isHardwareAccelerated).isEqualTo(true)
+        assertThat(reportedErrors.single().message).isEqualTo("Codec inspection failed")
     }
 
     @Test
@@ -332,4 +400,18 @@ class FramewrightMedia3EventAdapterTest {
             .setSampleMimeType("video/avc")
             .setCodecs("avc1.640028")
             .build()
+
+    private fun inspectedSoftwareCapability() =
+        DecoderCapabilitySnapshot(
+            canonicalName = "c2.android.avc.decoder",
+            implementationType = CodecImplementationType.SOFTWARE_ONLY,
+            classificationSource = CodecClassificationSource.PLATFORM,
+            isVendor = false,
+            isAlias = false,
+            supportsAdaptivePlayback = true,
+            supportsSecurePlayback = false,
+            supportsTunneledPlayback = false,
+            maxSupportedInstances = 8,
+            selectedFormatSupport = CodecFormatSupport.SUPPORTED,
+        )
 }
