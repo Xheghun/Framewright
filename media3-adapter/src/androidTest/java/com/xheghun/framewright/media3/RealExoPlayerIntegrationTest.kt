@@ -1,6 +1,7 @@
 package com.xheghun.framewright.media3
 
 import android.content.Context
+import androidx.media3.common.Format
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
@@ -12,8 +13,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.xheghun.analytics.CodecResult
 import com.xheghun.analytics.DiagnosticEvent
+import com.xheghun.analytics.DiagnosticEventJsonCodec
+import com.xheghun.analytics.DiagnosticEventMetadata
 import com.xheghun.analytics.DiagnosticEventPipeline
 import com.xheghun.analytics.LoadErrorClass
+import com.xheghun.analytics.PlayerState
+import com.xheghun.analytics.TrackType
+import com.xheghun.framewright.codec.CodecInspectionResult
+import com.xheghun.framewright.codec.FramewrightCodecInspector
 import com.xheghun.framewright.storage.FramewrightStorage
 import com.xheghun.framewright.storage.StorageResult
 import kotlinx.coroutines.runBlocking
@@ -28,6 +35,75 @@ import java.util.concurrent.TimeUnit
 @UnstableApi
 @RunWith(AndroidJUnit4::class)
 class RealExoPlayerIntegrationTest {
+    @Test
+    fun realCodecInspectionReachesStoredSessionExport() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val storage = FramewrightStorage.createInMemory(context)
+        val codecInspector = FramewrightCodecInspector()
+        val catalog = codecInspector.listDecoders() as CodecInspectionResult.Success
+        val videoDecoder = catalog.data.first { it.mimeType.startsWith("video/") }
+        val sessionId = "real-codec-export-session"
+        val pipeline = DiagnosticEventPipeline(sinks = listOf(storage.eventSink))
+        val adapter =
+            FramewrightMedia3EventAdapter(
+                player = InstrumentedPlayerBridge(),
+                clock = InstrumentedClock,
+                eventIdGenerator = {
+                    java.util.UUID
+                        .randomUUID()
+                        .toString()
+                },
+                onTerminalState = {},
+                decoderCapabilityResolver = codecInspector,
+            )
+        pipeline.tryPublish(
+            DiagnosticEvent.SessionStart(
+                metadata =
+                    DiagnosticEventMetadata(
+                        sessionId = sessionId,
+                        eventId = "session-start",
+                        timestampMs = 1_000,
+                        elapsedRealtimeMs = 1_000,
+                        playerState = PlayerState.IDLE,
+                    ),
+                mediaUri = "https://example.test/video.m3u8",
+            ),
+        )
+        adapter.attach(pipeline, sessionId)
+        adapter.handleVideoInputFormatChanged(
+            Format
+                .Builder()
+                .setSampleMimeType(videoDecoder.mimeType)
+                .setWidth(128)
+                .setHeight(128)
+                .setAverageBitrate(500_000)
+                .build(),
+        )
+        adapter.handleDecoderInitialized(videoDecoder.decoderName, TrackType.VIDEO, 12)
+
+        val decoderEvent =
+            pipeline
+                .snapshot(sessionId)
+                .events
+                .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                .single()
+        assertEquals(videoDecoder.decoderName, decoderEvent.decoderName)
+        assertTrue(decoderEvent.capabilities != null)
+
+        runBlocking {
+            assertTrue(storage.eventSink.flush() is StorageResult.Success)
+            val export = storage.sessionStore.exportSession(sessionId) as StorageResult.Success
+            val decodedExport = DiagnosticEventJsonCodec().decodeSession(export.data) as CodecResult.Success
+            val storedDecoderEvent =
+                decodedExport.data.events
+                    .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                    .single()
+            assertTrue(storedDecoderEvent.capabilities != null)
+            assertTrue(storage.close() is StorageResult.Success)
+        }
+        adapter.detach()
+    }
+
     @Test
     fun realExoPlayerTerminalCallbackReachesSessionExport() {
         val context = ApplicationProvider.getApplicationContext<Context>()

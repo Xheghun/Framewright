@@ -8,6 +8,7 @@ Unlike typical video players, Framewright focuses on **observability** and **rep
 
 - **Media-Agnostic Analytics**: A core telemetry engine that decouples event logic from the specific player implementation.
 - **ABR Explorer**: Real-time bandwidth comparison, bitrate-ladder state, and track-selection decisions.
+- **Codec Inspector**: Cached decoder capability discovery and selected-format support reporting.
 - **Diagnostics Overlay**: A performance-focused Compose overlay for monitoring resolution, codecs, and buffer health in-situ(WIP).
 - **DRM Inspector**: Detailed Widevine status reporting and a catalog of reproducible failure signatures(WIP).
 - **Media Lab**: A fixture-driven simulation environment to reproduce edge-case bugs without real network infrastructure(WIP).
@@ -21,7 +22,7 @@ Framewright is organized into specialized modules to ensure a clean separation o
 | [`:analytics`](file:///analytics) | Pure Kotlin core for tracking session lifecycle and diagnostic events. |
 | [`:media3-adapter`](file:///media3-adapter) | Attach-first Media3 instrumentation and event mapping; the host retains player ownership. |
 | [`:bandwidth-monitor`](file:///bandwidth-monitor) | Custom bandwidth estimators and ABR tracking logic. |
-| [`:codec-inspector`](file:///codec-inspector) | Device capability reporting (HW vs. SW codecs). |
+| [`:codec-inspector`](file:///codec-inspector) | Optional Android decoder catalog and selected-codec capability inspection. |
 | [`:drm-inspector`](file:///drm-inspector) | DRM key status tracking and failure cataloging. |
 | [`:diagnostics-overlay`](file:///diagnostics-overlay) | Real-time UI overlay for playback stats. |
 | [`:storage`](file:///storage) | Room-backed persistence for playback sessions. |
@@ -83,6 +84,26 @@ same transfers for comparison, and both values are emitted in each `BANDWIDTH_SA
 The sample app's **ABR Explorer** consumes those samples alongside Media3 track-switch callbacks,
 keeps a bounded in-memory timeline, and displays the active format and decision history without
 taking ownership of playback.
+
+### Enable codec inspection
+
+Create the optional inspector once and pass it to the Media3 diagnostics configuration. Framewright
+then enriches decoder-initialization events with the selected decoder's platform capabilities while
+the host application retains ownership of ExoPlayer.
+
+```kotlin
+val codecInspector = FramewrightCodecInspector()
+val diagnostics = FramewrightMedia3.attach(
+    context = context,
+    player = player,
+    configuration = Media3DiagnosticsConfiguration(
+        decoderCapabilityResolver = codecInspector,
+    ),
+)
+```
+
+Use `codecInspector.listDecoders()` for an on-demand device catalog. Catalog entries are kept out of
+session telemetry; only the decoder selected by Media3 is attached to its `DECODER_INIT` event.
 
 ---
 

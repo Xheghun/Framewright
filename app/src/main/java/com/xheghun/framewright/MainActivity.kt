@@ -36,6 +36,7 @@ import com.xheghun.framewright.abr.AbrExplorerAction
 import com.xheghun.framewright.abr.AbrExplorerScreen
 import com.xheghun.framewright.abr.AbrExplorerViewModel
 import com.xheghun.framewright.bandwidth.FramewrightBandwidthMeter
+import com.xheghun.framewright.codec.FramewrightCodecInspector
 import com.xheghun.framewright.media3.FramewrightMedia3
 import com.xheghun.framewright.media3.Media3DiagnosticsConfiguration
 import com.xheghun.framewright.media3.MediaSessionInfo
@@ -80,6 +81,7 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val abrExplorerState by abrExplorerViewModel.state.collectAsStateWithLifecycle()
 
     val bandwidthMeter = remember { FramewrightBandwidthMeter(context.applicationContext) }
+    val codecInspector = remember { FramewrightCodecInspector() }
     val player = remember { ExoPlayer.Builder(context).setBandwidthMeter(bandwidthMeter).build() }
     val diagnostics =
         remember {
@@ -87,7 +89,11 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
                 context,
                 player,
                 contributors = listOf(bandwidthMeter),
-                configuration = Media3DiagnosticsConfiguration(eventSinks = listOf(storage.eventSink)),
+                configuration =
+                    Media3DiagnosticsConfiguration(
+                        eventSinks = listOf(storage.eventSink),
+                        decoderCapabilityResolver = codecInspector,
+                    ),
             )
         }
 

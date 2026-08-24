@@ -159,6 +159,7 @@ private class DefaultMedia3DiagnosticsSession(
             uriSanitizer = ::sanitizeUri,
             includeErrorMessages = configuration.includeErrorMessages,
             onDiagnosticsError = ::reportDiagnosticsError,
+            decoderCapabilityResolver = configuration.decoderCapabilityResolver,
         )
 
     override val events: SharedFlow<DiagnosticEvent> = pipeline.events

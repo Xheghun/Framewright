@@ -35,6 +35,29 @@ internal fun allEventTypes(): List<DiagnosticEvent> =
             TrackType.VIDEO,
             18,
             true,
+            capabilities =
+                DecoderCapabilitySnapshot(
+                    canonicalName = "c2.qti.avc.decoder",
+                    implementationType = CodecImplementationType.HARDWARE_ACCELERATED,
+                    classificationSource = CodecClassificationSource.PLATFORM,
+                    isVendor = true,
+                    isAlias = false,
+                    profileLevels = listOf(CodecProfileLevelSnapshot(profile = 8, level = 2_048)),
+                    supportsAdaptivePlayback = true,
+                    supportsSecurePlayback = true,
+                    supportsTunneledPlayback = false,
+                    maxSupportedInstances = 16,
+                    selectedFormatSupport = CodecFormatSupport.SUPPORTED,
+                    videoCapabilities =
+                        VideoCodecCapabilitiesSnapshot(
+                            supportedWidths = IntRangeSnapshot(64, 3_840),
+                            supportedHeights = IntRangeSnapshot(64, 2_160),
+                            supportedBitratesBps = IntRangeSnapshot(1, 80_000_000),
+                            supportedFrameRates = DoubleRangeSnapshot(1.0, 120.0),
+                            widthAlignment = 2,
+                            heightAlignment = 2,
+                        ),
+                ),
         ),
         DiagnosticEvent.DroppedFrames(metadata(eventId = "7"), 3, 1_000),
         DiagnosticEvent.LoadError(

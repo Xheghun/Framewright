@@ -93,6 +93,36 @@ class DiagnosticEventJsonCodecTest {
     }
 
     @Test
+    fun `legacy decoder event without capabilities decodes with null inspection`() {
+        val json =
+            """
+            {
+              "schemaVersion": 2,
+              "event": {
+                "sessionId": "session-1",
+                "eventId": "decoder-1",
+                "timestampMs": 1000,
+                "elapsedRealtimeMs": 1000,
+                "type": "DECODER_INIT",
+                "playerState": "READY",
+                "payload": {
+                  "decoderName": "c2.android.avc.decoder",
+                  "mimeType": "video/avc",
+                  "trackType": "VIDEO",
+                  "initializationDurationMs": 12,
+                  "isHardwareAccelerated": false
+                }
+              }
+            }
+            """.trimIndent()
+
+        val result = codec.decodeEvent(json) as CodecResult.Success
+        val decoder = result.data as DiagnosticEvent.DecoderInit
+
+        assertThat(decoder.capabilities).isEqualTo(null)
+    }
+
+    @Test
     fun `legacy track switch without available formats decodes with empty ladder`() {
         val json =
             """

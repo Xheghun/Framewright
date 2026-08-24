@@ -31,6 +31,12 @@ enum class SessionEndReason { USER_STOPPED, APP_BACKGROUNDED, PLAYBACK_ENDED, RE
 
 enum class DrmKeyState { USABLE, EXPIRED, OUTPUT_RESTRICTED, STATUS_PENDING, INTERNAL_ERROR, UNKNOWN }
 
+enum class CodecImplementationType { HARDWARE_ACCELERATED, SOFTWARE_ONLY, UNKNOWN }
+
+enum class CodecClassificationSource { PLATFORM, NAME_HEURISTIC, UNKNOWN }
+
+enum class CodecFormatSupport { SUPPORTED, UNSUPPORTED, UNKNOWN }
+
 data class DiagnosticEventMetadata(
     val sessionId: String,
     val eventId: String,
@@ -58,6 +64,80 @@ data class FormatSnapshot(
         require(width == null || width >= 0) { "width must be non-negative" }
         require(height == null || height >= 0) { "height must be non-negative" }
     }
+}
+
+data class IntRangeSnapshot(
+    val lower: Int,
+    val upper: Int,
+) {
+    init {
+        require(lower <= upper) { "lower must not exceed upper" }
+    }
+}
+
+data class DoubleRangeSnapshot(
+    val lower: Double,
+    val upper: Double,
+) {
+    init {
+        require(lower.isFinite() && upper.isFinite()) { "range values must be finite" }
+        require(lower <= upper) { "lower must not exceed upper" }
+    }
+}
+
+data class CodecProfileLevelSnapshot(
+    val profile: Int,
+    val level: Int,
+)
+
+data class VideoCodecCapabilitiesSnapshot(
+    val supportedWidths: IntRangeSnapshot,
+    val supportedHeights: IntRangeSnapshot,
+    val supportedBitratesBps: IntRangeSnapshot,
+    val supportedFrameRates: DoubleRangeSnapshot,
+    val widthAlignment: Int,
+    val heightAlignment: Int,
+) {
+    init {
+        require(widthAlignment > 0) { "widthAlignment must be greater than zero" }
+        require(heightAlignment > 0) { "heightAlignment must be greater than zero" }
+    }
+}
+
+data class DecoderCapabilitySnapshot(
+    val canonicalName: String? = null,
+    val implementationType: CodecImplementationType,
+    val classificationSource: CodecClassificationSource,
+    val isVendor: Boolean? = null,
+    val isAlias: Boolean? = null,
+    val profileLevels: List<CodecProfileLevelSnapshot> = emptyList(),
+    val supportsAdaptivePlayback: Boolean,
+    val supportsSecurePlayback: Boolean,
+    val supportsTunneledPlayback: Boolean,
+    val maxSupportedInstances: Int? = null,
+    val selectedFormatSupport: CodecFormatSupport = CodecFormatSupport.UNKNOWN,
+    val videoCapabilities: VideoCodecCapabilitiesSnapshot? = null,
+) {
+    init {
+        require(maxSupportedInstances == null || maxSupportedInstances > 0) {
+            "maxSupportedInstances must be greater than zero"
+        }
+    }
+}
+
+data class DecoderInspectionRequest(
+    val decoderName: String,
+    val mimeType: String,
+    val format: FormatSnapshot? = null,
+) {
+    init {
+        require(decoderName.isNotBlank()) { "decoderName must not be blank" }
+        require(mimeType.isNotBlank()) { "mimeType must not be blank" }
+    }
+}
+
+fun interface DecoderCapabilityResolver {
+    fun resolve(request: DecoderInspectionRequest): DecoderCapabilitySnapshot?
 }
 
 sealed interface DiagnosticEvent {
@@ -123,6 +203,7 @@ sealed interface DiagnosticEvent {
         val trackType: TrackType,
         val initializationDurationMs: Long,
         val isHardwareAccelerated: Boolean?,
+        val capabilities: DecoderCapabilitySnapshot? = null,
     ) : DiagnosticEvent {
         override val type = EventType.DECODER_INIT
     }

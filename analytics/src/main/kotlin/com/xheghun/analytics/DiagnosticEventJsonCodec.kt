@@ -192,6 +192,7 @@ class DiagnosticEventJsonCodec(
                     put("trackType", event.trackType.name)
                     put("initializationDurationMs", event.initializationDurationMs)
                     putNullable("isHardwareAccelerated", event.isHardwareAccelerated)
+                    putNullableObject("capabilities", event.capabilities?.let(::decoderCapabilitiesJson))
                 }
                 is DiagnosticEvent.DroppedFrames -> {
                     put("count", event.count)
@@ -284,6 +285,7 @@ class DiagnosticEventJsonCodec(
                             TrackType.valueOf(payload.string("trackType")),
                             payload.long("initializationDurationMs"),
                             payload.nullableBoolean("isHardwareAccelerated"),
+                            payload.optionalObject("capabilities")?.toDecoderCapabilities(),
                         )
                     EventType.DROPPED_FRAMES -> DiagnosticEvent.DroppedFrames(metadata, payload.int("count"), payload.long("elapsedMs"))
                     EventType.LOAD_ERROR ->
@@ -343,6 +345,89 @@ private fun formatJson(format: FormatSnapshot) =
 private fun JsonObject.toFormat() =
     FormatSnapshot(nullableInt("width"), nullableInt("height"), int("bitrate"), nullableString("mimeType"), nullableString("codecs"))
 
+private fun decoderCapabilitiesJson(capabilities: DecoderCapabilitySnapshot) =
+    buildJsonObject {
+        putNullable("canonicalName", capabilities.canonicalName)
+        put("implementationType", capabilities.implementationType.name)
+        put("classificationSource", capabilities.classificationSource.name)
+        putNullable("isVendor", capabilities.isVendor)
+        putNullable("isAlias", capabilities.isAlias)
+        put(
+            "profileLevels",
+            buildJsonArray {
+                capabilities.profileLevels.forEach { profileLevel ->
+                    add(
+                        buildJsonObject {
+                            put("profile", profileLevel.profile)
+                            put("level", profileLevel.level)
+                        },
+                    )
+                }
+            },
+        )
+        put("supportsAdaptivePlayback", capabilities.supportsAdaptivePlayback)
+        put("supportsSecurePlayback", capabilities.supportsSecurePlayback)
+        put("supportsTunneledPlayback", capabilities.supportsTunneledPlayback)
+        putNullable("maxSupportedInstances", capabilities.maxSupportedInstances)
+        put("selectedFormatSupport", capabilities.selectedFormatSupport.name)
+        putNullableObject("videoCapabilities", capabilities.videoCapabilities?.let(::videoCapabilitiesJson))
+    }
+
+private fun videoCapabilitiesJson(capabilities: VideoCodecCapabilitiesSnapshot) =
+    buildJsonObject {
+        put("supportedWidths", intRangeJson(capabilities.supportedWidths))
+        put("supportedHeights", intRangeJson(capabilities.supportedHeights))
+        put("supportedBitratesBps", intRangeJson(capabilities.supportedBitratesBps))
+        put("supportedFrameRates", doubleRangeJson(capabilities.supportedFrameRates))
+        put("widthAlignment", capabilities.widthAlignment)
+        put("heightAlignment", capabilities.heightAlignment)
+    }
+
+private fun intRangeJson(range: IntRangeSnapshot) =
+    buildJsonObject {
+        put("lower", range.lower)
+        put("upper", range.upper)
+    }
+
+private fun doubleRangeJson(range: DoubleRangeSnapshot) =
+    buildJsonObject {
+        put("lower", range.lower)
+        put("upper", range.upper)
+    }
+
+private fun JsonObject.toDecoderCapabilities() =
+    DecoderCapabilitySnapshot(
+        canonicalName = nullableString("canonicalName"),
+        implementationType = CodecImplementationType.valueOf(string("implementationType")),
+        classificationSource = CodecClassificationSource.valueOf(string("classificationSource")),
+        isVendor = nullableBoolean("isVendor"),
+        isAlias = nullableBoolean("isAlias"),
+        profileLevels =
+            getValue("profileLevels").jsonArray.map { profileLevel ->
+                profileLevel.jsonObject.let { CodecProfileLevelSnapshot(it.int("profile"), it.int("level")) }
+            },
+        supportsAdaptivePlayback = boolean("supportsAdaptivePlayback"),
+        supportsSecurePlayback = boolean("supportsSecurePlayback"),
+        supportsTunneledPlayback = boolean("supportsTunneledPlayback"),
+        maxSupportedInstances = nullableInt("maxSupportedInstances"),
+        selectedFormatSupport = CodecFormatSupport.valueOf(string("selectedFormatSupport")),
+        videoCapabilities = optionalObject("videoCapabilities")?.toVideoCapabilities(),
+    )
+
+private fun JsonObject.toVideoCapabilities() =
+    VideoCodecCapabilitiesSnapshot(
+        supportedWidths = obj("supportedWidths").toIntRange(),
+        supportedHeights = obj("supportedHeights").toIntRange(),
+        supportedBitratesBps = obj("supportedBitratesBps").toIntRange(),
+        supportedFrameRates = obj("supportedFrameRates").toDoubleRange(),
+        widthAlignment = int("widthAlignment"),
+        heightAlignment = int("heightAlignment"),
+    )
+
+private fun JsonObject.toIntRange() = IntRangeSnapshot(int("lower"), int("upper"))
+
+private fun JsonObject.toDoubleRange() = DoubleRangeSnapshot(double("lower"), double("upper"))
+
 private fun JsonObject.string(key: String) = getValue(key).jsonPrimitive.content
 
 private fun JsonObject.nullableString(key: String) = getValue(key).jsonPrimitive.contentOrNull
@@ -364,6 +449,8 @@ private fun JsonObject.nullableBoolean(key: String) = getValue(key).jsonPrimitiv
 private fun JsonObject.obj(key: String) = getValue(key).jsonObject
 
 private fun JsonObject.nullableObject(key: String) = getValue(key).takeUnless { it is JsonNull }?.jsonObject
+
+private fun JsonObject.optionalObject(key: String) = get(key)?.takeUnless { it is JsonNull }?.jsonObject
 
 private fun JsonObject.optionalFormatList(key: String): List<FormatSnapshot> =
     get(key)?.jsonArray?.map { it.jsonObject.toFormat() }.orEmpty()

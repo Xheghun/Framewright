@@ -2,6 +2,7 @@ package com.xheghun.framewright.media3
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.xheghun.analytics.DecoderCapabilityResolver
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventSink
 import org.junit.jupiter.api.Test
@@ -24,6 +25,15 @@ class Media3DiagnosticsConfigurationTest {
         val configuration = Media3DiagnosticsConfiguration(eventSinks = listOf(sink))
 
         assertThat(configuration.eventSinks).isEqualTo(listOf(sink))
+    }
+
+    @Test
+    fun `configuration retains optional decoder capability resolver`() {
+        val resolver = DecoderCapabilityResolver { null }
+
+        val configuration = Media3DiagnosticsConfiguration(decoderCapabilityResolver = resolver)
+
+        assertThat(configuration.decoderCapabilityResolver).isEqualTo(resolver)
     }
 
     @Test

@@ -14,6 +14,9 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.LoadEventInfo
 import androidx.media3.exoplayer.source.MediaLoadData
 import com.xheghun.analytics.AbstractPlayerEventSource
+import com.xheghun.analytics.CodecImplementationType
+import com.xheghun.analytics.DecoderCapabilityResolver
+import com.xheghun.analytics.DecoderInspectionRequest
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventMetadata
 import com.xheghun.analytics.DiagnosticEventPipeline
@@ -40,6 +43,7 @@ internal class FramewrightMedia3EventAdapter(
     private val includeErrorMessages: Boolean = false,
     private val onDiagnosticsError: (Throwable) -> Unit = {},
     private val decoderAccelerationResolver: (String) -> Boolean? = ::isHardwareAccelerated,
+    private val decoderCapabilityResolver: DecoderCapabilityResolver? = null,
 ) : AbstractPlayerEventSource() {
     private var pipeline: DiagnosticEventPipeline? = null
     private var sessionId = ""
@@ -50,6 +54,7 @@ internal class FramewrightMedia3EventAdapter(
     private var audioMimeType = "unknown"
     private var seekStartedAtMs: Long? = null
     private var selectedVideoFormat: FormatSnapshot? = null
+    private var selectedAudioFormat: FormatSnapshot? = null
     private var availableVideoFormats: List<FormatSnapshot> = emptyList()
     private var latestBandwidthEstimateBps = 0L
     private val retryCountByLoadTaskId = mutableMapOf<Long, Int>()
@@ -62,6 +67,7 @@ internal class FramewrightMedia3EventAdapter(
         audioMimeType = "unknown"
         seekStartedAtMs = null
         selectedVideoFormat = null
+        selectedAudioFormat = null
         availableVideoFormats = emptyList()
         latestBandwidthEstimateBps = 0
         retryCountByLoadTaskId.clear()
@@ -125,7 +131,7 @@ internal class FramewrightMedia3EventAdapter(
                 format: Format,
                 decoderReuseEvaluation: DecoderReuseEvaluation?,
             ) {
-                handleInputFormatChanged(TrackType.AUDIO, format.sampleMimeType)
+                handleAudioInputFormatChanged(format)
             }
 
             override fun onVideoDecoderInitialized(
@@ -284,6 +290,11 @@ internal class FramewrightMedia3EventAdapter(
         handleVideoFormatSelected(format, inferredReason)
     }
 
+    internal fun handleAudioInputFormatChanged(format: Format) {
+        handleInputFormatChanged(TrackType.AUDIO, format.sampleMimeType)
+        selectedAudioFormat = format.toSnapshot()
+    }
+
     internal fun handleDecoderInitialized(
         decoderName: String,
         trackType: TrackType,
@@ -412,10 +423,37 @@ internal class FramewrightMedia3EventAdapter(
         trackType: TrackType,
         initializationDurationMs: Long,
     ): DiagnosticEvent.DecoderInit {
-        val isHardwareAccelerated =
+        val selectedFormat =
+            when (trackType) {
+                TrackType.VIDEO -> selectedVideoFormat
+                TrackType.AUDIO -> selectedAudioFormat
+                TrackType.TEXT -> null
+            }
+        val capabilities =
+            decoderCapabilityResolver?.let { resolver ->
+                runCatching {
+                    resolver.resolve(
+                        DecoderInspectionRequest(
+                            decoderName = decoderName,
+                            mimeType = mimeType,
+                            format = selectedFormat,
+                        ),
+                    )
+                }.onFailure(::reportDiagnosticsError).getOrNull()
+            }
+        val fallbackHardwareAcceleration by lazy {
             runCatching { decoderAccelerationResolver(decoderName) }
                 .onFailure(::reportDiagnosticsError)
                 .getOrNull()
+        }
+        val isHardwareAccelerated =
+            when (capabilities?.implementationType) {
+                CodecImplementationType.HARDWARE_ACCELERATED -> true
+                CodecImplementationType.SOFTWARE_ONLY -> false
+                CodecImplementationType.UNKNOWN,
+                null,
+                -> fallbackHardwareAcceleration
+            }
         return DiagnosticEvent.DecoderInit(
             metadata = metadata(),
             decoderName = decoderName,
@@ -423,6 +461,7 @@ internal class FramewrightMedia3EventAdapter(
             trackType = trackType,
             initializationDurationMs = initializationDurationMs,
             isHardwareAccelerated = isHardwareAccelerated,
+            capabilities = capabilities,
         )
     }
 
