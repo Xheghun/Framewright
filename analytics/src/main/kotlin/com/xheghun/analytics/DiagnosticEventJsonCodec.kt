@@ -211,6 +211,27 @@ class DiagnosticEventJsonCodec(
                     put("status", event.status.name)
                     put("securityLevel", event.securityLevel)
                     putNullable("expirationTimeMs", event.expirationTimeMs)
+                    putNullable("hdcpLevel", event.hdcpLevel)
+                    putNullable("maxHdcpLevel", event.maxHdcpLevel)
+                    putNullable("hasNewUsableKey", event.hasNewUsableKey)
+                }
+                is DiagnosticEvent.DrmSessionEvent -> {
+                    put("eventType", event.eventType.name)
+                    putNullable("state", event.state?.name)
+                    putNullable("errorCode", event.errorCode)
+                    putNullable("errorMessage", event.errorMessage)
+                }
+                is DiagnosticEvent.DrmRequest -> {
+                    put("requestKind", event.requestKind.name)
+                    putNullable("licenseRequestType", event.licenseRequestType?.name)
+                    put("attemptNumber", event.attemptNumber)
+                    put("durationMs", event.durationMs)
+                    put("successful", event.successful)
+                    putNullable("errorCode", event.errorCode)
+                    putNullable("errorMessage", event.errorMessage)
+                }
+                is DiagnosticEvent.DrmExpirationUpdate -> {
+                    put("expirationTimeMs", event.expirationTimeMs)
                 }
                 is DiagnosticEvent.BandwidthSample -> {
                     put("segmentSizeBytes", event.segmentSizeBytes)
@@ -305,6 +326,33 @@ class DiagnosticEventJsonCodec(
                             DrmKeyState.valueOf(payload.string("status")),
                             payload.string("securityLevel"),
                             payload.nullableLong("expirationTimeMs"),
+                            payload.optionalString("hdcpLevel"),
+                            payload.optionalString("maxHdcpLevel"),
+                            payload.optionalBoolean("hasNewUsableKey"),
+                        )
+                    EventType.DRM_SESSION_EVENT ->
+                        DiagnosticEvent.DrmSessionEvent(
+                            metadata,
+                            DrmSessionEventType.valueOf(payload.string("eventType")),
+                            payload.optionalString("state")?.let(DrmSessionState::valueOf),
+                            payload.optionalString("errorCode"),
+                            payload.optionalString("errorMessage"),
+                        )
+                    EventType.DRM_REQUEST ->
+                        DiagnosticEvent.DrmRequest(
+                            metadata,
+                            DrmRequestKind.valueOf(payload.string("requestKind")),
+                            payload.optionalString("licenseRequestType")?.let(DrmLicenseRequestType::valueOf),
+                            payload.int("attemptNumber"),
+                            payload.long("durationMs"),
+                            payload.boolean("successful"),
+                            payload.optionalString("errorCode"),
+                            payload.optionalString("errorMessage"),
+                        )
+                    EventType.DRM_EXPIRATION_UPDATE ->
+                        DiagnosticEvent.DrmExpirationUpdate(
+                            metadata,
+                            payload.long("expirationTimeMs"),
                         )
                     EventType.BANDWIDTH_SAMPLE ->
                         DiagnosticEvent.BandwidthSample(
@@ -451,6 +499,10 @@ private fun JsonObject.obj(key: String) = getValue(key).jsonObject
 private fun JsonObject.nullableObject(key: String) = getValue(key).takeUnless { it is JsonNull }?.jsonObject
 
 private fun JsonObject.optionalObject(key: String) = get(key)?.takeUnless { it is JsonNull }?.jsonObject
+
+private fun JsonObject.optionalString(key: String) = get(key)?.jsonPrimitive?.contentOrNull
+
+private fun JsonObject.optionalBoolean(key: String) = get(key)?.jsonPrimitive?.contentOrNull?.toBooleanStrict()
 
 private fun JsonObject.optionalFormatList(key: String): List<FormatSnapshot> =
     get(key)?.jsonArray?.map { it.jsonObject.toFormat() }.orEmpty()

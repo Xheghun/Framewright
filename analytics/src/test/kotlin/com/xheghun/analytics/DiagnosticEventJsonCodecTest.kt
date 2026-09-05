@@ -153,6 +153,37 @@ class DiagnosticEventJsonCodecTest {
     }
 
     @Test
+    fun `legacy DRM key status decodes without new platform properties`() {
+        val json =
+            """
+            {
+              "schemaVersion": 2,
+              "event": {
+                "sessionId": "session-1",
+                "eventId": "drm-key-1",
+                "timestampMs": 1000,
+                "elapsedRealtimeMs": 1000,
+                "type": "DRM_KEY_STATUS",
+                "playerState": "READY",
+                "payload": {
+                  "keyId": "0a0b",
+                  "status": "USABLE",
+                  "securityLevel": "L1",
+                  "expirationTimeMs": null
+                }
+              }
+            }
+            """.trimIndent()
+
+        val result = codec.decodeEvent(json) as CodecResult.Success
+        val keyStatus = result.data as DiagnosticEvent.DrmKeyStatus
+
+        assertThat(keyStatus.hdcpLevel).isEqualTo(null)
+        assertThat(keyStatus.maxHdcpLevel).isEqualTo(null)
+        assertThat(keyStatus.hasNewUsableKey).isEqualTo(null)
+    }
+
+    @Test
     fun `unsupported schema version returns typed failure`() {
         val json = """{"schemaVersion":3,"sessionId":"s","truncated":false,"events":[]}"""
         val result = codec.decodeSession(json)

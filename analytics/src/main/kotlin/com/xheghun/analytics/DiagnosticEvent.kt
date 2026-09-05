@@ -13,6 +13,9 @@ enum class EventType {
     DROPPED_FRAMES,
     LOAD_ERROR,
     DRM_KEY_STATUS,
+    DRM_SESSION_EVENT,
+    DRM_REQUEST,
+    DRM_EXPIRATION_UPDATE,
     BANDWIDTH_SAMPLE,
     PLAYBACK_ERROR,
 }
@@ -30,6 +33,14 @@ enum class LoadErrorClass { TIMEOUT, HTTP_4XX, HTTP_5XX, DNS, CONNECTION, UNKNOW
 enum class SessionEndReason { USER_STOPPED, APP_BACKGROUNDED, PLAYBACK_ENDED, REPLACED, ERROR, RELEASED }
 
 enum class DrmKeyState { USABLE, EXPIRED, OUTPUT_RESTRICTED, STATUS_PENDING, INTERNAL_ERROR, UNKNOWN }
+
+enum class DrmSessionEventType { ACQUIRED, KEYS_LOADED, KEYS_RESTORED, KEYS_REMOVED, RELEASED, ERROR }
+
+enum class DrmSessionState { RELEASED, ERROR, OPENING, OPENED, OPENED_WITH_KEYS, UNKNOWN }
+
+enum class DrmRequestKind { LICENSE, PROVISIONING }
+
+enum class DrmLicenseRequestType { INITIAL, RENEWAL, RELEASE, UPDATE, NONE, UNKNOWN }
 
 enum class CodecImplementationType { HARDWARE_ACCELERATED, SOFTWARE_ONLY, UNKNOWN }
 
@@ -234,8 +245,50 @@ sealed interface DiagnosticEvent {
         val status: DrmKeyState,
         val securityLevel: String,
         val expirationTimeMs: Long? = null,
+        val hdcpLevel: String? = null,
+        val maxHdcpLevel: String? = null,
+        val hasNewUsableKey: Boolean? = null,
     ) : DiagnosticEvent {
         override val type = EventType.DRM_KEY_STATUS
+    }
+
+    data class DrmSessionEvent(
+        override val metadata: DiagnosticEventMetadata,
+        val eventType: DrmSessionEventType,
+        val state: DrmSessionState? = null,
+        val errorCode: String? = null,
+        val errorMessage: String? = null,
+    ) : DiagnosticEvent {
+        override val type = EventType.DRM_SESSION_EVENT
+    }
+
+    data class DrmRequest(
+        override val metadata: DiagnosticEventMetadata,
+        val requestKind: DrmRequestKind,
+        val licenseRequestType: DrmLicenseRequestType? = null,
+        val attemptNumber: Int,
+        val durationMs: Long,
+        val successful: Boolean,
+        val errorCode: String? = null,
+        val errorMessage: String? = null,
+    ) : DiagnosticEvent {
+        init {
+            require(attemptNumber > 0) { "attemptNumber must be greater than zero" }
+            require(durationMs >= 0) { "durationMs must be non-negative" }
+        }
+
+        override val type = EventType.DRM_REQUEST
+    }
+
+    data class DrmExpirationUpdate(
+        override val metadata: DiagnosticEventMetadata,
+        val expirationTimeMs: Long,
+    ) : DiagnosticEvent {
+        init {
+            require(expirationTimeMs >= 0) { "expirationTimeMs must be non-negative" }
+        }
+
+        override val type = EventType.DRM_EXPIRATION_UPDATE
     }
 
     data class BandwidthSample(
