@@ -16,10 +16,6 @@ import com.xheghun.analytics.DrmRequestKind
 import java.util.UUID
 import java.util.WeakHashMap
 
-/**
- * Optional Media3 DRM instrumentation. The host retains ownership of its player, DRM session
- * manager, and license callback.
- */
 @UnstableApi
 class FramewrightDrmInspector internal constructor(
     private val configuration: DrmInspectorConfiguration,
@@ -41,7 +37,6 @@ class FramewrightDrmInspector internal constructor(
     private var attachment: Attachment? = null
     private val expirationBySessionId = mutableMapOf<String, Long>()
 
-    /** Provider to pass to [androidx.media3.exoplayer.drm.DefaultDrmSessionManager.Builder]. */
     val exoMediaDrmProvider =
         ExoMediaDrm.Provider { scheme ->
             ObservableExoMediaDrm(
@@ -52,10 +47,6 @@ class FramewrightDrmInspector internal constructor(
             )
         }
 
-    /**
-     * Wraps the host's callback without changing requests, responses, retry decisions, or thrown
-     * errors.
-     */
     fun wrapMediaDrmCallback(callback: MediaDrmCallback): MediaDrmCallback =
         InstrumentedMediaDrmCallback(
             delegate = callback,
