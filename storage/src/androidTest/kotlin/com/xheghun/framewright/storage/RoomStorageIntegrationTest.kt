@@ -6,6 +6,11 @@ import com.xheghun.analytics.CodecResult
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventJsonCodec
 import com.xheghun.analytics.DiagnosticEventMetadata
+import com.xheghun.analytics.DrmKeyState
+import com.xheghun.analytics.DrmLicenseRequestType
+import com.xheghun.analytics.DrmRequestKind
+import com.xheghun.analytics.DrmSessionEventType
+import com.xheghun.analytics.DrmSessionState
 import com.xheghun.analytics.SessionEndReason
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -111,6 +116,29 @@ class RoomStorageIntegrationTest {
                 appVersion = "1.0",
             ),
             DiagnosticEvent.RenderFirstFrame(metadata("first-frame", 1_400), 400),
+            DiagnosticEvent.DrmSessionEvent(
+                metadata("drm-acquired", 1_500),
+                eventType = DrmSessionEventType.ACQUIRED,
+                state = DrmSessionState.OPENED,
+            ),
+            DiagnosticEvent.DrmRequest(
+                metadata("license-request", 1_600),
+                requestKind = DrmRequestKind.LICENSE,
+                licenseRequestType = DrmLicenseRequestType.INITIAL,
+                attemptNumber = 1,
+                durationMs = 80,
+                successful = true,
+            ),
+            DiagnosticEvent.DrmKeyStatus(
+                metadata("key-status", 1_700),
+                keyId = "0a0b",
+                status = DrmKeyState.USABLE,
+                securityLevel = "L1",
+                expirationTimeMs = 90_000,
+                hdcpLevel = "HDCP_V2_2",
+                maxHdcpLevel = "HDCP_V2_3",
+                hasNewUsableKey = true,
+            ),
             DiagnosticEvent.SessionEnd(metadata("end", 2_000), 1_000, SessionEndReason.PLAYBACK_ENDED),
         )
 

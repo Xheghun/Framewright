@@ -11,6 +11,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.drm.DrmSession
+import androidx.media3.exoplayer.drm.KeyRequestInfo
 import androidx.media3.exoplayer.source.LoadEventInfo
 import androidx.media3.exoplayer.source.MediaLoadData
 import com.xheghun.analytics.AbstractPlayerEventSource
@@ -20,6 +22,8 @@ import com.xheghun.analytics.DecoderInspectionRequest
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventMetadata
 import com.xheghun.analytics.DiagnosticEventPipeline
+import com.xheghun.analytics.DrmSessionEventType
+import com.xheghun.analytics.DrmSessionState
 import com.xheghun.analytics.FormatSnapshot
 import com.xheghun.analytics.LoadErrorClass
 import com.xheghun.analytics.SessionEndReason
@@ -228,7 +232,72 @@ internal class FramewrightMedia3EventAdapter(
             ) {
                 handlePlayerError(error.errorCodeName, error.message, error.cause?.javaClass?.name)
             }
+
+            override fun onDrmSessionAcquired(
+                eventTime: AnalyticsListener.EventTime,
+                state: Int,
+            ) {
+                handleDrmSessionAcquired(state)
+            }
+
+            override fun onDrmKeysLoaded(
+                eventTime: AnalyticsListener.EventTime,
+                keyRequestInfo: KeyRequestInfo,
+            ) {
+                handleDrmLifecycleEvent(DrmSessionEventType.KEYS_LOADED, DrmSessionState.OPENED_WITH_KEYS)
+            }
+
+            override fun onDrmKeysRestored(eventTime: AnalyticsListener.EventTime) {
+                handleDrmLifecycleEvent(DrmSessionEventType.KEYS_RESTORED, DrmSessionState.OPENED_WITH_KEYS)
+            }
+
+            override fun onDrmKeysRemoved(eventTime: AnalyticsListener.EventTime) {
+                handleDrmLifecycleEvent(DrmSessionEventType.KEYS_REMOVED)
+            }
+
+            override fun onDrmSessionReleased(eventTime: AnalyticsListener.EventTime) {
+                handleDrmLifecycleEvent(DrmSessionEventType.RELEASED, DrmSessionState.RELEASED)
+            }
+
+            override fun onDrmSessionManagerError(
+                eventTime: AnalyticsListener.EventTime,
+                error: Exception,
+            ) {
+                handleDrmSessionManagerError(error)
+            }
         }
+
+    internal fun handleDrmSessionAcquired(media3State: Int) {
+        handleDrmLifecycleEvent(
+            eventType = DrmSessionEventType.ACQUIRED,
+            state = media3State.toAnalyticsDrmSessionState(),
+        )
+    }
+
+    internal fun handleDrmLifecycleEvent(
+        eventType: DrmSessionEventType,
+        state: DrmSessionState? = null,
+    ) {
+        publish(
+            DiagnosticEvent.DrmSessionEvent(
+                metadata = metadata(),
+                eventType = eventType,
+                state = state,
+            ),
+        )
+    }
+
+    internal fun handleDrmSessionManagerError(error: Exception) {
+        publish(
+            DiagnosticEvent.DrmSessionEvent(
+                metadata = metadata(),
+                eventType = DrmSessionEventType.ERROR,
+                state = DrmSessionState.ERROR,
+                errorCode = error.javaClass.name,
+                errorMessage = error.message.takeIf { includeErrorMessages },
+            ),
+        )
+    }
 
     internal fun handleRenderedFirstFrame() {
         if (hasRenderedFirstFrame) return
@@ -529,6 +598,17 @@ internal class FramewrightMedia3EventAdapter(
 
     private fun extractHttpStatus(error: IOException): Int? = (error as? HttpDataSource.InvalidResponseCodeException)?.responseCode
 }
+
+@UnstableApi
+private fun Int.toAnalyticsDrmSessionState(): DrmSessionState =
+    when (this) {
+        DrmSession.STATE_RELEASED -> DrmSessionState.RELEASED
+        DrmSession.STATE_ERROR -> DrmSessionState.ERROR
+        DrmSession.STATE_OPENING -> DrmSessionState.OPENING
+        DrmSession.STATE_OPENED -> DrmSessionState.OPENED
+        DrmSession.STATE_OPENED_WITH_KEYS -> DrmSessionState.OPENED_WITH_KEYS
+        else -> DrmSessionState.UNKNOWN
+    }
 
 private val hardwareAccelerationByDecoderName: Map<String, Boolean> by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
     MediaCodecList(MediaCodecList.ALL_CODECS).codecInfos.associate { codec ->

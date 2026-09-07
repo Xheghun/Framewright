@@ -24,9 +24,17 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.core.ktx)
-    testImplementation(libs.junit)
+    api(project(":analytics"))
+    api(libs.androidx.media3.exoplayer)
+
+    testImplementation(libs.junit5.api)
+    testRuntimeOnly(libs.junit5.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.assertk)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }

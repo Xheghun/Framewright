@@ -69,9 +69,32 @@ internal fun allEventTypes(): List<DiagnosticEvent> =
             false,
             "Unavailable",
         ),
-        DiagnosticEvent.DrmKeyStatus(metadata(eventId = "9"), "a2V5", DrmKeyState.USABLE, "L1", 90_000),
-        DiagnosticEvent.BandwidthSample(
+        DiagnosticEvent.DrmKeyStatus(
+            metadata(eventId = "9"),
+            "a2V5",
+            DrmKeyState.USABLE,
+            "L1",
+            90_000,
+            hdcpLevel = "HDCP_V2_2",
+            maxHdcpLevel = "HDCP_V2_3",
+            hasNewUsableKey = true,
+        ),
+        DiagnosticEvent.DrmSessionEvent(
             metadata(eventId = "10"),
+            DrmSessionEventType.KEYS_LOADED,
+            DrmSessionState.OPENED_WITH_KEYS,
+        ),
+        DiagnosticEvent.DrmRequest(
+            metadata(eventId = "11"),
+            DrmRequestKind.LICENSE,
+            DrmLicenseRequestType.INITIAL,
+            attemptNumber = 1,
+            durationMs = 220,
+            successful = true,
+        ),
+        DiagnosticEvent.DrmExpirationUpdate(metadata(eventId = "12"), expirationTimeMs = 90_000),
+        DiagnosticEvent.BandwidthSample(
+            metadata(eventId = "13"),
             500_000,
             500,
             8_000_000,
@@ -80,6 +103,6 @@ internal fun allEventTypes(): List<DiagnosticEvent> =
             6_500_000,
             0.9,
         ),
-        DiagnosticEvent.PlaybackError(metadata(eventId = "11"), "ERROR_CODE_IO_NETWORK_CONNECTION_FAILED", "Network", "timeout", true),
-        DiagnosticEvent.SessionEnd(metadata(eventId = "12", timestampMs = 61_000), 60_000, SessionEndReason.PLAYBACK_ENDED),
+        DiagnosticEvent.PlaybackError(metadata(eventId = "14"), "ERROR_CODE_IO_NETWORK_CONNECTION_FAILED", "Network", "timeout", true),
+        DiagnosticEvent.SessionEnd(metadata(eventId = "15", timestampMs = 61_000), 60_000, SessionEndReason.PLAYBACK_ENDED),
     )

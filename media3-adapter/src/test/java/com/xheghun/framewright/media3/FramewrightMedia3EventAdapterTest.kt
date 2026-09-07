@@ -4,6 +4,7 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.drm.DrmSession
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEmpty
@@ -16,6 +17,8 @@ import com.xheghun.analytics.DecoderCapabilitySnapshot
 import com.xheghun.analytics.DecoderInspectionRequest
 import com.xheghun.analytics.DiagnosticEvent
 import com.xheghun.analytics.DiagnosticEventPipeline
+import com.xheghun.analytics.DrmSessionEventType
+import com.xheghun.analytics.DrmSessionState
 import com.xheghun.analytics.LoadErrorClass
 import com.xheghun.analytics.SessionEndReason
 import com.xheghun.analytics.TrackSwitchReason
@@ -366,6 +369,48 @@ class FramewrightMedia3EventAdapterTest {
                 .single()
         assertThat(droppedFrames.count).isEqualTo(7)
         assertThat(terminalReasons).containsExactly(SessionEndReason.PLAYBACK_ENDED)
+    }
+
+    @Test
+    fun `DRM lifecycle callbacks retain Media3 state and event order`() {
+        attachForPreparation()
+
+        adapter.handleDrmSessionAcquired(DrmSession.STATE_OPENED)
+        adapter.handleDrmLifecycleEvent(DrmSessionEventType.KEYS_LOADED, DrmSessionState.OPENED_WITH_KEYS)
+        adapter.handleDrmLifecycleEvent(DrmSessionEventType.RELEASED, DrmSessionState.RELEASED)
+
+        val drmEvents = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.DrmSessionEvent>()
+        assertThat(drmEvents.map { it.eventType })
+            .containsExactly(
+                DrmSessionEventType.ACQUIRED,
+                DrmSessionEventType.KEYS_LOADED,
+                DrmSessionEventType.RELEASED,
+            )
+        assertThat(drmEvents.map { it.state })
+            .containsExactly(
+                DrmSessionState.OPENED,
+                DrmSessionState.OPENED_WITH_KEYS,
+                DrmSessionState.RELEASED,
+            )
+    }
+
+    @Test
+    fun `recoverable DRM manager error is diagnostic and does not terminate playback`() {
+        attachForPreparation()
+
+        adapter.handleDrmSessionManagerError(IllegalStateException("license rejected"))
+
+        val drmError =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.DrmSessionEvent>()
+                .single()
+        assertThat(drmError.eventType).isEqualTo(DrmSessionEventType.ERROR)
+        assertThat(drmError.state).isEqualTo(DrmSessionState.ERROR)
+        assertThat(drmError.errorCode).isEqualTo(IllegalStateException::class.java.name)
+        assertThat(drmError.errorMessage).isEqualTo(null)
+        assertThat(terminalReasons).isEmpty()
     }
 
     @Test

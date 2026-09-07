@@ -7,6 +7,8 @@
     <string name="share_diagnostic_session">Share diagnostic session</string>
     <string name="export_share_failed">No app is available to share diagnostics</string>
     <string name="open_abr_explorer">ABR Explorer</string>
+    <string name="play_widevine_demo">Play Widevine DASH</string>
+    <string name="play_clear_demo">Play clear HLS</string>
     <string name="abr_explorer_title">ABR Explorer</string>
     <string name="close_abr_explorer">Close</string>
     <string name="abr_session_elapsed">Session elapsed: %1$s</string>

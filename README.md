@@ -10,7 +10,7 @@ Unlike typical video players, Framewright focuses on **observability** and **rep
 - **ABR Explorer**: Real-time bandwidth comparison, bitrate-ladder state, and track-selection decisions.
 - **Codec Inspector**: Cached decoder capability discovery and selected-format support reporting.
 - **Diagnostics Overlay**: A performance-focused Compose overlay for monitoring resolution, codecs, and buffer health in-situ(WIP).
-- **DRM Inspector**: Detailed Widevine status reporting and a catalog of reproducible failure signatures(WIP).
+- **DRM Inspector**: Streaming Widevine lifecycle, request timing, key status, expiry, and device-security diagnostics.
 - **Media Lab**: A fixture-driven simulation environment to reproduce edge-case bugs without real network infrastructure(WIP).
 
 ## Project Structure
@@ -23,7 +23,7 @@ Framewright is organized into specialized modules to ensure a clean separation o
 | [`:media3-adapter`](file:///media3-adapter) | Attach-first Media3 instrumentation and event mapping; the host retains player ownership. |
 | [`:bandwidth-monitor`](file:///bandwidth-monitor) | Custom bandwidth estimators and ABR tracking logic. |
 | [`:codec-inspector`](file:///codec-inspector) | Optional Android decoder catalog and selected-codec capability inspection. |
-| [`:drm-inspector`](file:///drm-inspector) | DRM key status tracking and failure cataloging. |
+| [`:drm-inspector`](file:///drm-inspector) | Optional host-installed Widevine request and key-status instrumentation. |
 | [`:diagnostics-overlay`](file:///diagnostics-overlay) | Real-time UI overlay for playback stats. |
 | [`:storage`](file:///storage) | Room-backed persistence for playback sessions. |
 | [`:media-lab`](file:///media-lab) | Fixture-based playback simulation and case studies. |
@@ -104,6 +104,30 @@ val diagnostics = FramewrightMedia3.attach(
 
 Use `codecInspector.listDecoders()` for an on-demand device catalog. Catalog entries are kept out of
 session telemetry; only the decoder selected by Media3 is attached to its `DECODER_INIT` event.
+
+### Enable Widevine DRM inspection
+
+Install the optional inspector while constructing the host-owned DRM session manager, wrap the
+existing `MediaDrmCallback`, and attach the same inspector as a diagnostics contributor:
+
+```kotlin
+val drmInspector = FramewrightDrmInspector()
+val drmSessionManager = DefaultDrmSessionManager.Builder()
+    .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, drmInspector.exoMediaDrmProvider)
+    .build(drmInspector.wrapMediaDrmCallback(existingMediaDrmCallback))
+
+val diagnostics = FramewrightMedia3.attach(
+    context = context,
+    player = player,
+    contributors = listOf(drmInspector),
+)
+```
+
+Framewright records streaming DRM lifecycle, request duration and retries, key status, expiration,
+security level, and available HDCP properties. It does not record DRM session identifiers, license
+or provisioning payloads, credentials, or license URLs. Offline-license management is outside the
+v1 inspector scope. The sample app includes a selectable Widevine DASH test stream; its public test
+license endpoint is for development diagnostics only.
 
 ---
 

@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":analytics"))
     implementation(project(":bandwidth-monitor"))
     implementation(project(":codec-inspector"))
+    implementation(project(":drm-inspector"))
     implementation(project(":storage"))
 
     implementation(platform(libs.androidx.compose.bom))
@@ -58,6 +59,7 @@ dependencies {
 
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
 
     testImplementation(libs.junit5.api)

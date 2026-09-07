@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,18 +30,30 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.media3.common.MediaItem
+import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.drm.DefaultDrmSessionManager
+import androidx.media3.exoplayer.drm.DrmSessionManager
+import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
+import com.xheghun.analytics.DrmScheme
 import com.xheghun.framewright.abr.AbrExplorerAction
 import com.xheghun.framewright.abr.AbrExplorerScreen
 import com.xheghun.framewright.abr.AbrExplorerViewModel
 import com.xheghun.framewright.bandwidth.FramewrightBandwidthMeter
 import com.xheghun.framewright.codec.FramewrightCodecInspector
+import com.xheghun.framewright.drm.FramewrightDrmInspector
 import com.xheghun.framewright.media3.FramewrightMedia3
 import com.xheghun.framewright.media3.Media3DiagnosticsConfiguration
 import com.xheghun.framewright.media3.MediaSessionInfo
+import com.xheghun.framewright.playback.DemoPlaybackAction
+import com.xheghun.framewright.playback.DemoPlaybackSource
+import com.xheghun.framewright.playback.DemoPlaybackViewModel
+import com.xheghun.framewright.playback.licenseUri
+import com.xheghun.framewright.playback.toMediaItem
 import com.xheghun.framewright.storage.FramewrightStorage
 import com.xheghun.framewright.storage.StorageResult
 import com.xheghun.framewright.ui.theme.FramewrightTheme
@@ -66,10 +80,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Public HLS test stream — replace with your own once you're past the smoke test.
-private const val TEST_STREAM_URL =
-    "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
-
 @UnstableApi
 @Composable
 fun PlayerScreen(modifier: Modifier = Modifier) {
@@ -79,16 +89,50 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val coroutineScope = rememberCoroutineScope()
     val abrExplorerViewModel: AbrExplorerViewModel = viewModel()
     val abrExplorerState by abrExplorerViewModel.state.collectAsStateWithLifecycle()
+    val playbackViewModel: DemoPlaybackViewModel = viewModel()
+    val playbackState by playbackViewModel.state.collectAsStateWithLifecycle()
 
     val bandwidthMeter = remember { FramewrightBandwidthMeter(context.applicationContext) }
     val codecInspector = remember { FramewrightCodecInspector() }
-    val player = remember { ExoPlayer.Builder(context).setBandwidthMeter(bandwidthMeter).build() }
+    val drmInspector = remember { FramewrightDrmInspector() }
+    val drmSessionManager =
+        remember {
+            DefaultDrmSessionManager
+                .Builder()
+                .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, drmInspector.exoMediaDrmProvider)
+                .build(
+                    drmInspector.wrapMediaDrmCallback(
+                        HttpMediaDrmCallback(
+                            DemoPlaybackSource.WIDEVINE_DASH.licenseUri,
+                            DefaultHttpDataSource.Factory(),
+                        ),
+                    ),
+                )
+        }
+    val mediaSourceFactory =
+        remember {
+            DefaultMediaSourceFactory(context).setDrmSessionManagerProvider { mediaItem ->
+                if (mediaItem.localConfiguration?.drmConfiguration != null) {
+                    drmSessionManager
+                } else {
+                    DrmSessionManager.DRM_UNSUPPORTED
+                }
+            }
+        }
+    val player =
+        remember {
+            ExoPlayer
+                .Builder(context)
+                .setBandwidthMeter(bandwidthMeter)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+        }
     val diagnostics =
         remember {
             FramewrightMedia3.attach(
                 context,
                 player,
-                contributors = listOf(bandwidthMeter),
+                contributors = listOf(bandwidthMeter, drmInspector),
                 configuration =
                     Media3DiagnosticsConfiguration(
                         eventSinks = listOf(storage.eventSink),
@@ -116,6 +160,19 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
         ) {
             Text(stringResource(R.string.export_latest_session))
         }
+        OutlinedButton(
+            modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
+            onClick = { playbackViewModel.onAction(DemoPlaybackAction.ToggleSource) },
+        ) {
+            Text(
+                stringResource(
+                    when (playbackState.selectedSource) {
+                        DemoPlaybackSource.CLEAR_HLS -> R.string.play_widevine_demo
+                        DemoPlaybackSource.WIDEVINE_DASH -> R.string.play_clear_demo
+                    },
+                ),
+            )
+        }
         if (!abrExplorerState.isVisible) {
             Button(
                 modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
@@ -141,17 +198,27 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-        player.setMediaItem(MediaItem.fromUri(TEST_STREAM_URL))
-        diagnostics.trackPrepare(MediaSessionInfo(mediaUri = TEST_STREAM_URL)) {
+        onDispose {
+            player.release()
+            diagnostics.close()
+            collectorJob.cancel()
+        }
+    }
+
+    LaunchedEffect(playbackState.selectedSource) {
+        val source = playbackState.selectedSource
+        val mediaItem = source.toMediaItem()
+        player.stop()
+        player.setMediaItem(mediaItem)
+        diagnostics.trackPrepare(
+            MediaSessionInfo(
+                mediaUri = requireNotNull(mediaItem.localConfiguration).uri.toString(),
+                drmScheme = if (source == DemoPlaybackSource.WIDEVINE_DASH) DrmScheme.WIDEVINE else null,
+            ),
+        ) {
             player.prepare()
         }
         player.play()
-
-        onDispose {
-            collectorJob.cancel()
-            diagnostics.close()
-            player.release()
-        }
     }
 }
 
