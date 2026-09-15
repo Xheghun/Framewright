@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":bandwidth-monitor"))
     implementation(project(":codec-inspector"))
     implementation(project(":drm-inspector"))
+    implementation(project(":diagnostics-overlay"))
     implementation(project(":storage"))
 
     implementation(platform(libs.androidx.compose.bom))
