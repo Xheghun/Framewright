@@ -1,0 +1,36 @@
+<resources>
+    <string name="diagnostics_overlay_title">Playback diagnostics</string>
+    <string name="close_diagnostics_overlay">Close</string>
+    <string name="playback_section_title">Playback</string>
+    <string name="video_pipeline_section_title">Video pipeline</string>
+    <string name="drm_section_title">DRM</string>
+    <string name="player_state">Player state</string>
+    <string name="time_to_first_frame">Time to first frame</string>
+    <string name="resolution">Resolution</string>
+    <string name="video_bitrate">Video bitrate</string>
+    <string name="last_observed_buffer">Last observed buffer</string>
+    <string name="rebuffering">Rebuffering</string>
+    <string name="rebuffer_summary">Rebuffers</string>
+    <string name="rebuffer_summary_value">%1$d · %2$s total</string>
+    <string name="dropped_frames">Dropped frames</string>
+    <string name="codec">Codec</string>
+    <string name="decoder">Decoder</string>
+    <string name="decoder_type">Decoder type</string>
+    <string name="framewright_bandwidth">Framewright bandwidth</string>
+    <string name="media3_bandwidth">Media3 bandwidth</string>
+    <string name="drm_scheme">Scheme</string>
+    <string name="drm_session">Session</string>
+    <string name="drm_key_state">Key state</string>
+    <string name="drm_security_level">Security level</string>
+    <string name="drm_hdcp">HDCP / maximum</string>
+    <string name="drm_expiration">Expiration</string>
+    <string name="drm_last_request">Last request</string>
+    <string name="drm_error">DRM error</string>
+    <string name="latest_playback_error">Latest playback error</string>
+    <string name="latest_load_error">Latest load error</string>
+    <string name="error_code">Code</string>
+    <string name="error_message">Message</string>
+    <string name="fatal_error">Fatal</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+</resources>

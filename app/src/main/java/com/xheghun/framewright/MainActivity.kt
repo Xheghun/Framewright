@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -45,6 +46,9 @@ import com.xheghun.framewright.abr.AbrExplorerScreen
 import com.xheghun.framewright.abr.AbrExplorerViewModel
 import com.xheghun.framewright.bandwidth.FramewrightBandwidthMeter
 import com.xheghun.framewright.codec.FramewrightCodecInspector
+import com.xheghun.framewright.diagnostics.DiagnosticsOverlayAction
+import com.xheghun.framewright.diagnostics.DiagnosticsOverlayScreen
+import com.xheghun.framewright.diagnostics.DiagnosticsOverlayViewModel
 import com.xheghun.framewright.drm.FramewrightDrmInspector
 import com.xheghun.framewright.media3.FramewrightMedia3
 import com.xheghun.framewright.media3.Media3DiagnosticsConfiguration
@@ -89,6 +93,8 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
     val coroutineScope = rememberCoroutineScope()
     val abrExplorerViewModel: AbrExplorerViewModel = viewModel()
     val abrExplorerState by abrExplorerViewModel.state.collectAsStateWithLifecycle()
+    val diagnosticsOverlayViewModel: DiagnosticsOverlayViewModel = viewModel()
+    val diagnosticsOverlayState by diagnosticsOverlayViewModel.state.collectAsStateWithLifecycle()
     val playbackViewModel: DemoPlaybackViewModel = viewModel()
     val playbackState by playbackViewModel.state.collectAsStateWithLifecycle()
 
@@ -187,6 +193,23 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
                 onAction = abrExplorerViewModel::onAction,
             )
         }
+        if (!diagnosticsOverlayState.isVisible) {
+            OutlinedButton(
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 72.dp),
+                onClick = { diagnosticsOverlayViewModel.onAction(DiagnosticsOverlayAction.ToggleVisibility) },
+            ) {
+                Text(stringResource(R.string.open_diagnostics_overlay))
+            }
+        }
+        DiagnosticsOverlayScreen(
+            state = diagnosticsOverlayState,
+            onAction = diagnosticsOverlayViewModel::onAction,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+                    .widthIn(max = 380.dp),
+        )
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -195,6 +218,7 @@ fun PlayerScreen(modifier: Modifier = Modifier) {
                 diagnostics.events.collect { event ->
                     Log.d("Framewright", event.toString())
                     abrExplorerViewModel.onDiagnosticEvent(event)
+                    diagnosticsOverlayViewModel.onDiagnosticEvent(event)
                 }
             }
 
