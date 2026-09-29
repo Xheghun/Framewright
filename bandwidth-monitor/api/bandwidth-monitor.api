@@ -1,0 +1,59 @@
+public final class com/xheghun/framewright/bandwidth/BandwidthEstimateSnapshot {
+	public fun <init> (JJJJDI)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()D
+	public final fun component6 ()I
+	public final fun copy (JJJJDI)Lcom/xheghun/framewright/bandwidth/BandwidthEstimateSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/bandwidth/BandwidthEstimateSnapshot;JJJJDIILjava/lang/Object;)Lcom/xheghun/framewright/bandwidth/BandwidthEstimateSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfidence ()D
+	public final fun getCustomEstimateBps ()J
+	public final fun getDefaultEstimateBps ()J
+	public final fun getFastEstimateBps ()J
+	public final fun getSessionSampleCount ()I
+	public final fun getSlowEstimateBps ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration {
+	public fun <init> ()V
+	public fun <init> (DDJIIJ)V
+	public synthetic fun <init> (DDJIIJILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun component3 ()J
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun component6 ()J
+	public final fun copy (DDJIIJ)Lcom/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration;DDJIIJILjava/lang/Object;)Lcom/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFastAlpha ()D
+	public final fun getFullConfidenceSampleCount ()I
+	public final fun getInitialBitrateEstimateBps ()J
+	public final fun getMinimumSamplesForEstimate ()I
+	public final fun getRepresentativeTransferSizeBytes ()J
+	public final fun getSlowAlpha ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/bandwidth/FramewrightBandwidthMeter : com/xheghun/analytics/AbstractPlayerEventSource, androidx/media3/datasource/TransferListener, androidx/media3/exoplayer/upstream/BandwidthMeter {
+	public fun <init> (Landroid/content/Context;Lcom/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Landroid/content/Context;Lcom/xheghun/framewright/bandwidth/BandwidthMonitorConfiguration;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun addEventListener (Landroid/os/Handler;Landroidx/media3/exoplayer/upstream/BandwidthMeter$EventListener;)V
+	public fun getBitrateEstimate ()J
+	public final fun getCurrentEstimate ()Lcom/xheghun/framewright/bandwidth/BandwidthEstimateSnapshot;
+	public fun getTimeToFirstByteEstimateUs ()J
+	public fun getTransferListener ()Landroidx/media3/datasource/TransferListener;
+	public fun onBytesTransferred (Landroidx/media3/datasource/DataSource;Landroidx/media3/datasource/DataSpec;ZI)V
+	public fun onTransferEnd (Landroidx/media3/datasource/DataSource;Landroidx/media3/datasource/DataSpec;Z)V
+	public fun onTransferInitializing (Landroidx/media3/datasource/DataSource;Landroidx/media3/datasource/DataSpec;Z)V
+	public fun onTransferStart (Landroidx/media3/datasource/DataSource;Landroidx/media3/datasource/DataSpec;Z)V
+	public fun removeEventListener (Landroidx/media3/exoplayer/upstream/BandwidthMeter$EventListener;)V
+}
+

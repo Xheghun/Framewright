@@ -1,4 +1,6 @@
 pluginManagement {
+    includeBuild("build-logic")
+
     repositories {
         google {
             content {
@@ -31,6 +33,7 @@ include(
     ":drm-inspector",
     ":codec-inspector",
     ":diagnostics-overlay",
+    ":docs-snippets",
     ":media-lab",
     ":storage",
 )

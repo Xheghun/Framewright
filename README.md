@@ -1,135 +1,120 @@
 # Framewright
 
-Framewright is a professional-grade video diagnostics toolkit for Android, designed to provide deep visibility into media playback performance, ABR (Adaptive Bitrate) behavior, and DRM health.
+Framewright is an attach-first diagnostics toolkit for Android video playback. It observes a
+host-owned Media3 `ExoPlayer`, produces structured playback events, and lets an application add
+bandwidth, codec, DRM, UI, and persistence diagnostics independently.
 
-Unlike typical video players, Framewright focuses on **observability** and **reproducibility**, making it an essential tool for media engineers and developers working with complex playback stacks.
+Framewright is not a player framework. Your application continues to create, configure, control,
+and release its player.
 
-## Key Features
+> Framewright is preparing its first `0.1.0` Maven Central release. The coordinates below are the
+> stable release contract but will not resolve until that release is published.
 
-- **Media-Agnostic Analytics**: A core telemetry engine that decouples event logic from the specific player implementation.
-- **ABR Explorer**: Real-time bandwidth comparison, bitrate-ladder state, and track-selection decisions.
-- **Codec Inspector**: Cached decoder capability discovery and selected-format support reporting.
-- **Diagnostics Overlay**: A performance-focused Compose overlay for monitoring resolution, codecs, and buffer health in-situ(WIP).
-- **DRM Inspector**: Streaming Widevine lifecycle, request timing, key status, expiry, and device-security diagnostics.
-- **Media Lab**: A fixture-driven simulation environment to reproduce edge-case bugs without real network infrastructure(WIP).
+## Modules
 
-## Project Structure
+| Artifact | Purpose |
+| --- | --- |
+| [`framewright-analytics`](docs/modules/analytics.md) | Player-independent events, aggregation, summaries, and JSON serialization |
+| [`framewright-media3-adapter`](docs/modules/media3-adapter.md) | Maps callbacks from a host-owned Media3 player into analytics sessions |
+| [`framewright-bandwidth-monitor`](docs/modules/bandwidth-monitor.md) | Media3 bandwidth meter with dual-EWMA estimates and comparison telemetry |
+| [`framewright-codec-inspector`](docs/modules/codec-inspector.md) | Decoder catalog and selected-format capability inspection |
+| [`framewright-drm-inspector`](docs/modules/drm-inspector.md) | Widevine request, key-status, expiration, and output-protection diagnostics |
+| [`framewright-diagnostics-overlay`](docs/modules/diagnostics-overlay.md) | Compose UI driven by the diagnostic event stream |
+| [`framewright-storage`](docs/modules/storage.md) | Room-backed session persistence and JSON export |
 
-Framewright is organized into specialized modules to ensure a clean separation of concerns:
+Only use the artifacts your application needs. Feature artifacts bring in
+`framewright-analytics` transitively.
 
-| Module | Description |
-| :--- | :--- |
-| [`:analytics`](file:///analytics) | Pure Kotlin core for tracking session lifecycle and diagnostic events. |
-| [`:media3-adapter`](file:///media3-adapter) | Attach-first Media3 instrumentation and event mapping; the host retains player ownership. |
-| [`:bandwidth-monitor`](file:///bandwidth-monitor) | Custom bandwidth estimators and ABR tracking logic. |
-| [`:codec-inspector`](file:///codec-inspector) | Optional Android decoder catalog and selected-codec capability inspection. |
-| [`:drm-inspector`](file:///drm-inspector) | Optional host-installed Widevine request and key-status instrumentation. |
-| [`:diagnostics-overlay`](file:///diagnostics-overlay) | Real-time UI overlay for playback stats. |
-| [`:storage`](file:///storage) | Room-backed persistence for playback sessions. |
-| [`:media-lab`](file:///media-lab) | Fixture-based playback simulation and case studies. |
-| [`:app`](file:///app) | The main demonstration activity and UI. |
+## Install
 
-## 🛠 Getting Started
+Maven Central is available in new Android projects by default:
 
-### Prerequisites
-- Android Studio Ladybug or newer.
-- Android SDK 35.
-- Kotlin 2.1.0+.
+```kotlin
+repositories {
+    google()
+    mavenCentral()
+}
+```
 
-### Build & Run
+Add the Media3 adapter and any optional features:
+
+```kotlin
+dependencies {
+    implementation("io.github.xheghun:framewright-media3-adapter:0.1.0")
+    implementation("io.github.xheghun:framewright-bandwidth-monitor:0.1.0")
+    implementation("io.github.xheghun:framewright-codec-inspector:0.1.0")
+    implementation("io.github.xheghun:framewright-drm-inspector:0.1.0")
+    implementation("io.github.xheghun:framewright-diagnostics-overlay:0.1.0")
+    implementation("io.github.xheghun:framewright-storage:0.1.0")
+}
+```
+
+Framewright v0.1 requires Android API 24 or newer, Java 11 bytecode support, Kotlin 2.0 or newer,
+and Media3 1.10.1. See the [compatibility guide](docs/compatibility.md), including why consuming
+applications do not need to move to the repository's Kotlin compiler version.
+
+## Minimal Media3 integration
+
+Create the player yourself, then attach Framewright on the player's application thread:
+
+```kotlin
+val player = ExoPlayer.Builder(context).build()
+val diagnostics = FramewrightMedia3.attach(context, player)
+
+player.setMediaItem(MediaItem.fromUri(mediaUri))
+diagnostics.trackPrepare(MediaSessionInfo(mediaUri.toString())) {
+    player.prepare()
+}
+player.play()
+```
+
+Collect live events if a screen or logger needs them:
+
+```kotlin
+val eventJob = lifecycleScope.launch {
+    diagnostics.events.collect { event ->
+        Log.d("Framewright", event.toString())
+    }
+}
+```
+
+Release resources in the same lifecycle that owns the player:
+
+```kotlin
+diagnostics.close()
+player.release()
+eventJob.cancel()
+```
+
+For bandwidth, codec, DRM, storage, and overlay wiring together, use the
+[full integration guide](docs/full-integration.md).
+
+## Documentation
+
+- [Getting started](docs/getting-started.md)
+- [Compatibility](docs/compatibility.md)
+- [Full Media3 integration](docs/full-integration.md)
+- [Session lifecycle and export](docs/session-export.md)
+- [Privacy and security](docs/privacy.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Versioning policy](docs/versioning.md)
+- [Release process](docs/releasing.md)
+- [Changelog](CHANGELOG.md)
+
+Generated API reference is packaged in every artifact's `-javadoc.jar`. Maintainers can generate
+the local Dokka reference with `./gradlew dokkaGenerate` tasks on individual modules.
+
+## Build the repository
+
+The project uses JDK 21 to build while published bytecode targets Java 11:
+
 ```bash
-./gradlew :app:assembleDebug
+./gradlew spotlessCheck check verifyLocalPublications
 ```
 
-### Persist diagnostic sessions
+The `app` module is the in-repository demonstration application. It and `media-lab` are not
+published. Documentation snippets live in an unpublished compile fixture so CI catches API drift.
 
-Create one process-scoped storage instance for each database and pass its sink when attaching
-Framewright. The host still owns the player and its lifecycle.
+## License
 
-```kotlin
-val storage = FramewrightStorage.create(applicationContext)
-val diagnostics = FramewrightMedia3.attach(
-    context = context,
-    player = player,
-    configuration = Media3DiagnosticsConfiguration(
-        eventSinks = listOf(storage.eventSink),
-    ),
-)
-
-// Before reading or shutting down:
-storage.eventSink.flush()
-val sessions = storage.sessionStore.listSessions()
-```
-
-### Enable dual-estimator bandwidth diagnostics
-
-Construct the optional meter before the player, install it as ExoPlayer's active `BandwidthMeter`,
-and attach the same instance as an analytics contributor:
-
-```kotlin
-val bandwidthMeter = FramewrightBandwidthMeter(applicationContext)
-val player = ExoPlayer.Builder(context)
-    .setBandwidthMeter(bandwidthMeter)
-    .build()
-
-val diagnostics = FramewrightMedia3.attach(
-    context = context,
-    player = player,
-    contributors = listOf(bandwidthMeter),
-)
-```
-
-Framewright's dual-EWMA estimate drives selection. A private `DefaultBandwidthMeter` observes the
-same transfers for comparison, and both values are emitted in each `BANDWIDTH_SAMPLE` event.
-The sample app's **ABR Explorer** consumes those samples alongside Media3 track-switch callbacks,
-keeps a bounded in-memory timeline, and displays the active format and decision history without
-taking ownership of playback.
-
-### Enable codec inspection
-
-Create the optional inspector once and pass it to the Media3 diagnostics configuration. Framewright
-then enriches decoder-initialization events with the selected decoder's platform capabilities while
-the host application retains ownership of ExoPlayer.
-
-```kotlin
-val codecInspector = FramewrightCodecInspector()
-val diagnostics = FramewrightMedia3.attach(
-    context = context,
-    player = player,
-    configuration = Media3DiagnosticsConfiguration(
-        decoderCapabilityResolver = codecInspector,
-    ),
-)
-```
-
-Use `codecInspector.listDecoders()` for an on-demand device catalog. Catalog entries are kept out of
-session telemetry; only the decoder selected by Media3 is attached to its `DECODER_INIT` event.
-
-### Enable Widevine DRM inspection
-
-Install the optional inspector while constructing the host-owned DRM session manager, wrap the
-existing `MediaDrmCallback`, and attach the same inspector as a diagnostics contributor:
-
-```kotlin
-val drmInspector = FramewrightDrmInspector()
-val drmSessionManager = DefaultDrmSessionManager.Builder()
-    .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, drmInspector.exoMediaDrmProvider)
-    .build(drmInspector.wrapMediaDrmCallback(existingMediaDrmCallback))
-
-val diagnostics = FramewrightMedia3.attach(
-    context = context,
-    player = player,
-    contributors = listOf(drmInspector),
-)
-```
-
-Framewright records streaming DRM lifecycle, request duration and retries, key status, expiration,
-security level, and available HDCP properties. It does not record DRM session identifiers, license
-or provisioning payloads, credentials, or license URLs. Offline-license management is outside the
-v1 inspector scope. The sample app includes a selectable Widevine DASH test stream; its public test
-license endpoint is for development diagnostics only.
-
----
-
-> [!NOTE]
-> This project is currently in active development as part of a technical deep-dive into Media3 and Android telemetry.
+Framewright is licensed under the [Apache License 2.0](LICENSE).

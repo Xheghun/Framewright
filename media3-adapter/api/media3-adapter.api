@@ -1,0 +1,75 @@
+public abstract interface class com/xheghun/framewright/media3/DiagnosticUriSanitizer {
+	public abstract fun sanitize (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/media3/FramewrightMedia3 {
+	public static final field INSTANCE Lcom/xheghun/framewright/media3/FramewrightMedia3;
+	public final fun attach (Landroid/content/Context;Landroidx/media3/exoplayer/ExoPlayer;Ljava/util/List;Lcom/xheghun/framewright/media3/Media3DiagnosticsConfiguration;)Lcom/xheghun/framewright/media3/Media3DiagnosticsSession;
+	public static synthetic fun attach$default (Lcom/xheghun/framewright/media3/FramewrightMedia3;Landroid/content/Context;Landroidx/media3/exoplayer/ExoPlayer;Ljava/util/List;Lcom/xheghun/framewright/media3/Media3DiagnosticsConfiguration;ILjava/lang/Object;)Lcom/xheghun/framewright/media3/Media3DiagnosticsSession;
+}
+
+public final class com/xheghun/framewright/media3/Media3DiagnosticsConfiguration {
+	public fun <init> ()V
+	public fun <init> (Lcom/xheghun/framewright/media3/DiagnosticUriSanitizer;ZLjava/util/List;Lcom/xheghun/analytics/DecoderCapabilityResolver;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/xheghun/framewright/media3/DiagnosticUriSanitizer;ZLjava/util/List;Lcom/xheghun/analytics/DecoderCapabilityResolver;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/xheghun/framewright/media3/DiagnosticUriSanitizer;ZLjava/util/List;Lkotlin/jvm/functions/Function1;)V
+	public fun <init> (Lcom/xheghun/framewright/media3/DiagnosticUriSanitizer;ZLkotlin/jvm/functions/Function1;)V
+	public final fun getDecoderCapabilityResolver ()Lcom/xheghun/analytics/DecoderCapabilityResolver;
+	public final fun getEventSinks ()Ljava/util/List;
+	public final fun getIncludeErrorMessages ()Z
+	public final fun getOnDiagnosticsError ()Lkotlin/jvm/functions/Function1;
+	public final fun getUriSanitizer ()Lcom/xheghun/framewright/media3/DiagnosticUriSanitizer;
+}
+
+public abstract interface class com/xheghun/framewright/media3/Media3DiagnosticsSession : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun currentSnapshot ()Lcom/xheghun/framewright/media3/PlaybackSnapshot;
+	public abstract fun endSession (Lcom/xheghun/analytics/SessionEndReason;)V
+	public abstract fun exportCurrentSession ()Lcom/xheghun/analytics/CodecResult;
+	public abstract fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public abstract fun trackPrepare (Lcom/xheghun/framewright/media3/MediaSessionInfo;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+}
+
+public final class com/xheghun/framewright/media3/Media3DiagnosticsSession$DefaultImpls {
+	public static synthetic fun endSession$default (Lcom/xheghun/framewright/media3/Media3DiagnosticsSession;Lcom/xheghun/analytics/SessionEndReason;ILjava/lang/Object;)V
+}
+
+public final class com/xheghun/framewright/media3/MediaSessionInfo {
+	public fun <init> (Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/xheghun/framewright/media3/MediaSessionInfo;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/media3/MediaSessionInfo;Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/framewright/media3/MediaSessionInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppVersion ()Ljava/lang/String;
+	public final fun getDeviceModel ()Ljava/lang/String;
+	public final fun getDrmScheme ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun getMediaUri ()Ljava/lang/String;
+	public final fun getOsVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/media3/PlaybackSnapshot {
+	public fun <init> (Lcom/xheghun/analytics/SessionSnapshot;Lcom/xheghun/analytics/SessionSummary;Lcom/xheghun/analytics/PlayerState;JJ)V
+	public final fun component1 ()Lcom/xheghun/analytics/SessionSnapshot;
+	public final fun component2 ()Lcom/xheghun/analytics/SessionSummary;
+	public final fun component3 ()Lcom/xheghun/analytics/PlayerState;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun copy (Lcom/xheghun/analytics/SessionSnapshot;Lcom/xheghun/analytics/SessionSummary;Lcom/xheghun/analytics/PlayerState;JJ)Lcom/xheghun/framewright/media3/PlaybackSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/media3/PlaybackSnapshot;Lcom/xheghun/analytics/SessionSnapshot;Lcom/xheghun/analytics/SessionSummary;Lcom/xheghun/analytics/PlayerState;JJILjava/lang/Object;)Lcom/xheghun/framewright/media3/PlaybackSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBufferedDurationMs ()J
+	public final fun getPlayerState ()Lcom/xheghun/analytics/PlayerState;
+	public final fun getPositionMs ()J
+	public final fun getSession ()Lcom/xheghun/analytics/SessionSnapshot;
+	public final fun getSummary ()Lcom/xheghun/analytics/SessionSummary;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
