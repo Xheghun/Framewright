@@ -7,9 +7,6 @@ bandwidth, codec, DRM, UI, and persistence diagnostics independently.
 Framewright is not a player framework. Your application continues to create, configure, control,
 and release its player.
 
-> Framewright is preparing its first `0.1.0` Maven Central release. The coordinates below are the
-> stable release contract but will not resolve until that release is published.
-
 ## Modules
 
 | Artifact | Purpose |
