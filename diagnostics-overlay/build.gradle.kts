@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    id("framewright.publishing")
 }
 
 android {
@@ -30,11 +31,13 @@ android {
 dependencies {
     api(project(":analytics"))
 
-    implementation(platform(libs.androidx.compose.bom))
+    api(platform(libs.androidx.compose.bom))
+    api(libs.androidx.compose.ui)
+    api(libs.androidx.lifecycle.viewmodel.ktx)
+    api(libs.kolinx.coroutines)
+
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)

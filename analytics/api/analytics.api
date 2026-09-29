@@ -1,0 +1,850 @@
+public abstract class com/xheghun/analytics/AbstractPlayerEventSource : com/xheghun/analytics/PlayerEventSource {
+	public fun <init> ()V
+	public final fun attach (Lcom/xheghun/analytics/DiagnosticEventPipeline;Ljava/lang/String;)V
+	public final fun detach ()V
+	protected abstract fun onAttach (Lcom/xheghun/analytics/DiagnosticEventPipeline;Ljava/lang/String;)V
+	protected abstract fun onDetach ()V
+}
+
+public abstract interface class com/xheghun/analytics/AnalyticsError {
+}
+
+public final class com/xheghun/analytics/CodecClassificationSource : java/lang/Enum {
+	public static final field NAME_HEURISTIC Lcom/xheghun/analytics/CodecClassificationSource;
+	public static final field PLATFORM Lcom/xheghun/analytics/CodecClassificationSource;
+	public static final field UNKNOWN Lcom/xheghun/analytics/CodecClassificationSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/CodecClassificationSource;
+	public static fun values ()[Lcom/xheghun/analytics/CodecClassificationSource;
+}
+
+public abstract interface class com/xheghun/analytics/CodecError : com/xheghun/analytics/AnalyticsError {
+}
+
+public final class com/xheghun/analytics/CodecError$InvalidPayload : com/xheghun/analytics/CodecError {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/xheghun/analytics/CodecError$InvalidPayload;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecError$InvalidPayload;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecError$InvalidPayload;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/CodecError$MalformedJson : com/xheghun/analytics/CodecError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/xheghun/analytics/CodecError$MalformedJson;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecError$MalformedJson;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecError$MalformedJson;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/CodecError$UnknownEventType : com/xheghun/analytics/CodecError {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/xheghun/analytics/CodecError$UnknownEventType;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecError$UnknownEventType;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecError$UnknownEventType;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/CodecError$UnsupportedSchemaVersion : com/xheghun/analytics/CodecError {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lcom/xheghun/analytics/CodecError$UnsupportedSchemaVersion;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecError$UnsupportedSchemaVersion;IILjava/lang/Object;)Lcom/xheghun/analytics/CodecError$UnsupportedSchemaVersion;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/CodecFormatSupport : java/lang/Enum {
+	public static final field SUPPORTED Lcom/xheghun/analytics/CodecFormatSupport;
+	public static final field UNKNOWN Lcom/xheghun/analytics/CodecFormatSupport;
+	public static final field UNSUPPORTED Lcom/xheghun/analytics/CodecFormatSupport;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/CodecFormatSupport;
+	public static fun values ()[Lcom/xheghun/analytics/CodecFormatSupport;
+}
+
+public final class com/xheghun/analytics/CodecImplementationType : java/lang/Enum {
+	public static final field HARDWARE_ACCELERATED Lcom/xheghun/analytics/CodecImplementationType;
+	public static final field SOFTWARE_ONLY Lcom/xheghun/analytics/CodecImplementationType;
+	public static final field UNKNOWN Lcom/xheghun/analytics/CodecImplementationType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/CodecImplementationType;
+	public static fun values ()[Lcom/xheghun/analytics/CodecImplementationType;
+}
+
+public final class com/xheghun/analytics/CodecProfileLevelSnapshot {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/xheghun/analytics/CodecProfileLevelSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecProfileLevelSnapshot;IIILjava/lang/Object;)Lcom/xheghun/analytics/CodecProfileLevelSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLevel ()I
+	public final fun getProfile ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/xheghun/analytics/CodecResult {
+}
+
+public final class com/xheghun/analytics/CodecResult$Failure : com/xheghun/analytics/CodecResult {
+	public fun <init> (Lcom/xheghun/analytics/CodecError;)V
+	public final fun component1 ()Lcom/xheghun/analytics/CodecError;
+	public final fun copy (Lcom/xheghun/analytics/CodecError;)Lcom/xheghun/analytics/CodecResult$Failure;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecResult$Failure;Lcom/xheghun/analytics/CodecError;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecResult$Failure;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Lcom/xheghun/analytics/CodecError;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/CodecResult$Success : com/xheghun/analytics/CodecResult {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/xheghun/analytics/CodecResult$Success;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/CodecResult$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecResult$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/xheghun/analytics/DecoderCapabilityResolver {
+	public abstract fun resolve (Lcom/xheghun/analytics/DecoderInspectionRequest;)Lcom/xheghun/analytics/DecoderCapabilitySnapshot;
+}
+
+public final class com/xheghun/analytics/DecoderCapabilitySnapshot {
+	public fun <init> (Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Lcom/xheghun/analytics/CodecClassificationSource;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ZZZLjava/lang/Integer;Lcom/xheghun/analytics/CodecFormatSupport;Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Lcom/xheghun/analytics/CodecClassificationSource;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ZZZLjava/lang/Integer;Lcom/xheghun/analytics/CodecFormatSupport;Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/lang/Integer;
+	public final fun component11 ()Lcom/xheghun/analytics/CodecFormatSupport;
+	public final fun component12 ()Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;
+	public final fun component2 ()Lcom/xheghun/analytics/CodecImplementationType;
+	public final fun component3 ()Lcom/xheghun/analytics/CodecClassificationSource;
+	public final fun component4 ()Ljava/lang/Boolean;
+	public final fun component5 ()Ljava/lang/Boolean;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Z
+	public final fun component8 ()Z
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Lcom/xheghun/analytics/CodecClassificationSource;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ZZZLjava/lang/Integer;Lcom/xheghun/analytics/CodecFormatSupport;Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;)Lcom/xheghun/analytics/DecoderCapabilitySnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DecoderCapabilitySnapshot;Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Lcom/xheghun/analytics/CodecClassificationSource;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/util/List;ZZZLjava/lang/Integer;Lcom/xheghun/analytics/CodecFormatSupport;Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;ILjava/lang/Object;)Lcom/xheghun/analytics/DecoderCapabilitySnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCanonicalName ()Ljava/lang/String;
+	public final fun getClassificationSource ()Lcom/xheghun/analytics/CodecClassificationSource;
+	public final fun getImplementationType ()Lcom/xheghun/analytics/CodecImplementationType;
+	public final fun getMaxSupportedInstances ()Ljava/lang/Integer;
+	public final fun getProfileLevels ()Ljava/util/List;
+	public final fun getSelectedFormatSupport ()Lcom/xheghun/analytics/CodecFormatSupport;
+	public final fun getSupportsAdaptivePlayback ()Z
+	public final fun getSupportsSecurePlayback ()Z
+	public final fun getSupportsTunneledPlayback ()Z
+	public final fun getVideoCapabilities ()Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;
+	public fun hashCode ()I
+	public final fun isAlias ()Ljava/lang/Boolean;
+	public final fun isVendor ()Ljava/lang/Boolean;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DecoderInspectionRequest {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/FormatSnapshot;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/FormatSnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/xheghun/analytics/FormatSnapshot;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/FormatSnapshot;)Lcom/xheghun/analytics/DecoderInspectionRequest;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DecoderInspectionRequest;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/FormatSnapshot;ILjava/lang/Object;)Lcom/xheghun/analytics/DecoderInspectionRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDecoderName ()Ljava/lang/String;
+	public final fun getFormat ()Lcom/xheghun/analytics/FormatSnapshot;
+	public final fun getMimeType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/xheghun/analytics/DiagnosticEvent {
+	public abstract fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public abstract fun getType ()Lcom/xheghun/analytics/EventType;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$BandwidthSample : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;JJJJJJD)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()J
+	public final fun component8 ()D
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;JJJJJJD)Lcom/xheghun/analytics/DiagnosticEvent$BandwidthSample;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$BandwidthSample;Lcom/xheghun/analytics/DiagnosticEventMetadata;JJJJJJDILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$BandwidthSample;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfidence ()D
+	public final fun getDefaultEstimateBps ()J
+	public final fun getDownloadDurationMs ()J
+	public final fun getFastEstimateBps ()J
+	public final fun getInstantaneousBps ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getSegmentSizeBytes ()J
+	public final fun getSlowEstimateBps ()J
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DecoderInit : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/TrackType;JLjava/lang/Boolean;Lcom/xheghun/analytics/DecoderCapabilitySnapshot;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/TrackType;JLjava/lang/Boolean;Lcom/xheghun/analytics/DecoderCapabilitySnapshot;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lcom/xheghun/analytics/TrackType;
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun component7 ()Lcom/xheghun/analytics/DecoderCapabilitySnapshot;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/TrackType;JLjava/lang/Boolean;Lcom/xheghun/analytics/DecoderCapabilitySnapshot;)Lcom/xheghun/analytics/DiagnosticEvent$DecoderInit;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DecoderInit;Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/TrackType;JLjava/lang/Boolean;Lcom/xheghun/analytics/DecoderCapabilitySnapshot;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DecoderInit;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapabilities ()Lcom/xheghun/analytics/DecoderCapabilitySnapshot;
+	public final fun getDecoderName ()Ljava/lang/String;
+	public final fun getInitializationDurationMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getMimeType ()Ljava/lang/String;
+	public final fun getTrackType ()Lcom/xheghun/analytics/TrackType;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public final fun isHardwareAccelerated ()Ljava/lang/Boolean;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DrmExpirationUpdate : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)Lcom/xheghun/analytics/DiagnosticEvent$DrmExpirationUpdate;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DrmExpirationUpdate;Lcom/xheghun/analytics/DiagnosticEventMetadata;JILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DrmExpirationUpdate;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpirationTimeMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DrmKeyStatus : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/xheghun/analytics/DrmKeyState;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/Boolean;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Lcom/xheghun/analytics/DiagnosticEvent$DrmKeyStatus;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DrmKeyStatus;Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DrmKeyStatus;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpirationTimeMs ()Ljava/lang/Long;
+	public final fun getHasNewUsableKey ()Ljava/lang/Boolean;
+	public final fun getHdcpLevel ()Ljava/lang/String;
+	public final fun getKeyId ()Ljava/lang/String;
+	public final fun getMaxHdcpLevel ()Ljava/lang/String;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getSecurityLevel ()Ljava/lang/String;
+	public final fun getStatus ()Lcom/xheghun/analytics/DrmKeyState;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DrmRequest : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;IJZLjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;IJZLjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Lcom/xheghun/analytics/DrmRequestKind;
+	public final fun component3 ()Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public final fun component4 ()I
+	public final fun component5 ()J
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Ljava/lang/String;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;IJZLjava/lang/String;Ljava/lang/String;)Lcom/xheghun/analytics/DiagnosticEvent$DrmRequest;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DrmRequest;Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;IJZLjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DrmRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttemptNumber ()I
+	public final fun getDurationMs ()J
+	public final fun getErrorCode ()Ljava/lang/String;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getLicenseRequestType ()Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getRequestKind ()Lcom/xheghun/analytics/DrmRequestKind;
+	public final fun getSuccessful ()Z
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DrmSessionEvent : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Lcom/xheghun/analytics/DrmSessionEventType;
+	public final fun component3 ()Lcom/xheghun/analytics/DrmSessionState;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Ljava/lang/String;Ljava/lang/String;)Lcom/xheghun/analytics/DiagnosticEvent$DrmSessionEvent;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DrmSessionEvent;Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DrmSessionEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrorCode ()Ljava/lang/String;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getEventType ()Lcom/xheghun/analytics/DrmSessionEventType;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getState ()Lcom/xheghun/analytics/DrmSessionState;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$DroppedFrames : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;IJ)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;IJ)Lcom/xheghun/analytics/DiagnosticEvent$DroppedFrames;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$DroppedFrames;Lcom/xheghun/analytics/DiagnosticEventMetadata;IJILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$DroppedFrames;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCount ()I
+	public final fun getElapsedMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$LoadError : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/Integer;Lcom/xheghun/analytics/LoadErrorClass;IZLjava/lang/String;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Lcom/xheghun/analytics/LoadErrorClass;
+	public final fun component5 ()I
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/Integer;Lcom/xheghun/analytics/LoadErrorClass;IZLjava/lang/String;)Lcom/xheghun/analytics/DiagnosticEvent$LoadError;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$LoadError;Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/Integer;Lcom/xheghun/analytics/LoadErrorClass;IZLjava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$LoadError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrorClass ()Lcom/xheghun/analytics/LoadErrorClass;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public final fun getHttpStatus ()Ljava/lang/Integer;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getRetryCount ()I
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public final fun getUri ()Ljava/lang/String;
+	public final fun getWasCanceled ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$PlaybackError : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Z
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lcom/xheghun/analytics/DiagnosticEvent$PlaybackError;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$PlaybackError;Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$PlaybackError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/String;
+	public final fun getErrorCode ()Ljava/lang/String;
+	public final fun getErrorMessage ()Ljava/lang/String;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public final fun isFatal ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$RebufferEnd : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)Lcom/xheghun/analytics/DiagnosticEvent$RebufferEnd;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$RebufferEnd;Lcom/xheghun/analytics/DiagnosticEventMetadata;JILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$RebufferEnd;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$RebufferStart : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)Lcom/xheghun/analytics/DiagnosticEvent$RebufferStart;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$RebufferStart;Lcom/xheghun/analytics/DiagnosticEventMetadata;JILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$RebufferStart;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBufferedMsAtStart ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$RenderFirstFrame : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;J)Lcom/xheghun/analytics/DiagnosticEvent$RenderFirstFrame;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$RenderFirstFrame;Lcom/xheghun/analytics/DiagnosticEventMetadata;JILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$RenderFirstFrame;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getElapsedSincePrepareMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$SessionEnd : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;JLcom/xheghun/analytics/SessionEndReason;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()J
+	public final fun component3 ()Lcom/xheghun/analytics/SessionEndReason;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;JLcom/xheghun/analytics/SessionEndReason;)Lcom/xheghun/analytics/DiagnosticEvent$SessionEnd;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$SessionEnd;Lcom/xheghun/analytics/DiagnosticEventMetadata;JLcom/xheghun/analytics/SessionEndReason;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$SessionEnd;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getReason ()Lcom/xheghun/analytics/SessionEndReason;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$SessionStart : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/xheghun/analytics/DiagnosticEvent$SessionStart;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$SessionStart;Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Lcom/xheghun/analytics/DrmScheme;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$SessionStart;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppVersion ()Ljava/lang/String;
+	public final fun getDeviceModel ()Ljava/lang/String;
+	public final fun getDrmScheme ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun getMediaUri ()Ljava/lang/String;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getOsVersion ()Ljava/lang/String;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEvent$TrackSwitch : com/xheghun/analytics/DiagnosticEvent {
+	public fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/TrackSwitchReason;JJLjava/util/List;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/TrackSwitchReason;JJLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun component2 ()Lcom/xheghun/analytics/FormatSnapshot;
+	public final fun component3 ()Lcom/xheghun/analytics/FormatSnapshot;
+	public final fun component4 ()Lcom/xheghun/analytics/TrackSwitchReason;
+	public final fun component5 ()J
+	public final fun component6 ()J
+	public final fun component7 ()Ljava/util/List;
+	public final fun copy (Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/TrackSwitchReason;JJLjava/util/List;)Lcom/xheghun/analytics/DiagnosticEvent$TrackSwitch;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEvent$TrackSwitch;Lcom/xheghun/analytics/DiagnosticEventMetadata;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/FormatSnapshot;Lcom/xheghun/analytics/TrackSwitchReason;JJLjava/util/List;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEvent$TrackSwitch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAvailableVideoFormats ()Ljava/util/List;
+	public final fun getBufferedDurationMs ()J
+	public final fun getEstimatedBandwidthBps ()J
+	public final fun getFromFormat ()Lcom/xheghun/analytics/FormatSnapshot;
+	public fun getMetadata ()Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public final fun getReason ()Lcom/xheghun/analytics/TrackSwitchReason;
+	public final fun getToFormat ()Lcom/xheghun/analytics/FormatSnapshot;
+	public fun getType ()Lcom/xheghun/analytics/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEventJsonCodec {
+	public fun <init> ()V
+	public fun <init> (Lkotlinx/serialization/json/Json;)V
+	public synthetic fun <init> (Lkotlinx/serialization/json/Json;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun decodeEvent (Ljava/lang/String;)Lcom/xheghun/analytics/CodecResult;
+	public final fun decodeSession (Ljava/lang/String;)Lcom/xheghun/analytics/CodecResult;
+	public final fun encodeEvent (Lcom/xheghun/analytics/DiagnosticEvent;)Lcom/xheghun/analytics/CodecResult;
+	public final fun encodeSession (Lcom/xheghun/analytics/SessionSnapshot;)Lcom/xheghun/analytics/CodecResult;
+}
+
+public final class com/xheghun/analytics/DiagnosticEventKt {
+	public static final field DIAGNOSTIC_SCHEMA_VERSION I
+	public static final fun getElapsedRealtimeMs (Lcom/xheghun/analytics/DiagnosticEvent;)J
+	public static final fun getEventId (Lcom/xheghun/analytics/DiagnosticEvent;)Ljava/lang/String;
+	public static final fun getSessionId (Lcom/xheghun/analytics/DiagnosticEvent;)Ljava/lang/String;
+	public static final fun getTimestampMs (Lcom/xheghun/analytics/DiagnosticEvent;)J
+}
+
+public final class com/xheghun/analytics/DiagnosticEventMetadata {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;JJLcom/xheghun/analytics/PlayerState;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;JJLcom/xheghun/analytics/PlayerState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()Lcom/xheghun/analytics/PlayerState;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JJLcom/xheghun/analytics/PlayerState;)Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DiagnosticEventMetadata;Ljava/lang/String;Ljava/lang/String;JJLcom/xheghun/analytics/PlayerState;ILjava/lang/Object;)Lcom/xheghun/analytics/DiagnosticEventMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getElapsedRealtimeMs ()J
+	public final fun getEventId ()Ljava/lang/String;
+	public final fun getPlayerState ()Lcom/xheghun/analytics/PlayerState;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getTimestampMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DiagnosticEventPipeline {
+	public fun <init> ()V
+	public fun <init> (Lcom/xheghun/analytics/SessionAggregator;ILjava/util/List;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lcom/xheghun/analytics/SessionAggregator;ILjava/util/List;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/xheghun/analytics/SessionAggregator;ILkotlin/jvm/functions/Function1;)V
+	public final fun clear (Ljava/lang/String;)V
+	public final fun exportSessionJson (Ljava/lang/String;Lcom/xheghun/analytics/DiagnosticEventJsonCodec;)Lcom/xheghun/analytics/CodecResult;
+	public static synthetic fun exportSessionJson$default (Lcom/xheghun/analytics/DiagnosticEventPipeline;Ljava/lang/String;Lcom/xheghun/analytics/DiagnosticEventJsonCodec;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecResult;
+	public final fun getDroppedLiveEventCount ()J
+	public final fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public final fun publish (Lcom/xheghun/analytics/DiagnosticEvent;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun snapshot (Ljava/lang/String;)Lcom/xheghun/analytics/SessionSnapshot;
+	public final fun tryPublish (Lcom/xheghun/analytics/DiagnosticEvent;)Lcom/xheghun/analytics/PublishResult;
+}
+
+public abstract interface class com/xheghun/analytics/DiagnosticEventSink {
+	public abstract fun record (Lcom/xheghun/analytics/DiagnosticEvent;)V
+}
+
+public final class com/xheghun/analytics/DoubleRangeSnapshot {
+	public fun <init> (DD)V
+	public final fun component1 ()D
+	public final fun component2 ()D
+	public final fun copy (DD)Lcom/xheghun/analytics/DoubleRangeSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/DoubleRangeSnapshot;DDILjava/lang/Object;)Lcom/xheghun/analytics/DoubleRangeSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLower ()D
+	public final fun getUpper ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/DrmKeyState : java/lang/Enum {
+	public static final field EXPIRED Lcom/xheghun/analytics/DrmKeyState;
+	public static final field INTERNAL_ERROR Lcom/xheghun/analytics/DrmKeyState;
+	public static final field OUTPUT_RESTRICTED Lcom/xheghun/analytics/DrmKeyState;
+	public static final field STATUS_PENDING Lcom/xheghun/analytics/DrmKeyState;
+	public static final field UNKNOWN Lcom/xheghun/analytics/DrmKeyState;
+	public static final field USABLE Lcom/xheghun/analytics/DrmKeyState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmKeyState;
+	public static fun values ()[Lcom/xheghun/analytics/DrmKeyState;
+}
+
+public final class com/xheghun/analytics/DrmLicenseRequestType : java/lang/Enum {
+	public static final field INITIAL Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static final field NONE Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static final field RELEASE Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static final field RENEWAL Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static final field UNKNOWN Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static final field UPDATE Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public static fun values ()[Lcom/xheghun/analytics/DrmLicenseRequestType;
+}
+
+public final class com/xheghun/analytics/DrmRequestKind : java/lang/Enum {
+	public static final field LICENSE Lcom/xheghun/analytics/DrmRequestKind;
+	public static final field PROVISIONING Lcom/xheghun/analytics/DrmRequestKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmRequestKind;
+	public static fun values ()[Lcom/xheghun/analytics/DrmRequestKind;
+}
+
+public final class com/xheghun/analytics/DrmScheme : java/lang/Enum {
+	public static final field FAIRPLAY Lcom/xheghun/analytics/DrmScheme;
+	public static final field OTHER Lcom/xheghun/analytics/DrmScheme;
+	public static final field PLAYREADY Lcom/xheghun/analytics/DrmScheme;
+	public static final field WIDEVINE Lcom/xheghun/analytics/DrmScheme;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmScheme;
+	public static fun values ()[Lcom/xheghun/analytics/DrmScheme;
+}
+
+public final class com/xheghun/analytics/DrmSessionEventType : java/lang/Enum {
+	public static final field ACQUIRED Lcom/xheghun/analytics/DrmSessionEventType;
+	public static final field ERROR Lcom/xheghun/analytics/DrmSessionEventType;
+	public static final field KEYS_LOADED Lcom/xheghun/analytics/DrmSessionEventType;
+	public static final field KEYS_REMOVED Lcom/xheghun/analytics/DrmSessionEventType;
+	public static final field KEYS_RESTORED Lcom/xheghun/analytics/DrmSessionEventType;
+	public static final field RELEASED Lcom/xheghun/analytics/DrmSessionEventType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmSessionEventType;
+	public static fun values ()[Lcom/xheghun/analytics/DrmSessionEventType;
+}
+
+public final class com/xheghun/analytics/DrmSessionState : java/lang/Enum {
+	public static final field ERROR Lcom/xheghun/analytics/DrmSessionState;
+	public static final field OPENED Lcom/xheghun/analytics/DrmSessionState;
+	public static final field OPENED_WITH_KEYS Lcom/xheghun/analytics/DrmSessionState;
+	public static final field OPENING Lcom/xheghun/analytics/DrmSessionState;
+	public static final field RELEASED Lcom/xheghun/analytics/DrmSessionState;
+	public static final field UNKNOWN Lcom/xheghun/analytics/DrmSessionState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/DrmSessionState;
+	public static fun values ()[Lcom/xheghun/analytics/DrmSessionState;
+}
+
+public final class com/xheghun/analytics/EventType : java/lang/Enum {
+	public static final field BANDWIDTH_SAMPLE Lcom/xheghun/analytics/EventType;
+	public static final field DECODER_INIT Lcom/xheghun/analytics/EventType;
+	public static final field DRM_EXPIRATION_UPDATE Lcom/xheghun/analytics/EventType;
+	public static final field DRM_KEY_STATUS Lcom/xheghun/analytics/EventType;
+	public static final field DRM_REQUEST Lcom/xheghun/analytics/EventType;
+	public static final field DRM_SESSION_EVENT Lcom/xheghun/analytics/EventType;
+	public static final field DROPPED_FRAMES Lcom/xheghun/analytics/EventType;
+	public static final field LOAD_ERROR Lcom/xheghun/analytics/EventType;
+	public static final field PLAYBACK_ERROR Lcom/xheghun/analytics/EventType;
+	public static final field REBUFFER_END Lcom/xheghun/analytics/EventType;
+	public static final field REBUFFER_START Lcom/xheghun/analytics/EventType;
+	public static final field RENDER_FIRST_FRAME Lcom/xheghun/analytics/EventType;
+	public static final field SESSION_END Lcom/xheghun/analytics/EventType;
+	public static final field SESSION_START Lcom/xheghun/analytics/EventType;
+	public static final field TRACK_SWITCH Lcom/xheghun/analytics/EventType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/EventType;
+	public static fun values ()[Lcom/xheghun/analytics/EventType;
+}
+
+public final class com/xheghun/analytics/FormatSnapshot {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Integer;
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/String;Ljava/lang/String;)Lcom/xheghun/analytics/FormatSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/FormatSnapshot;Ljava/lang/Integer;Ljava/lang/Integer;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/xheghun/analytics/FormatSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBitrate ()I
+	public final fun getCodecs ()Ljava/lang/String;
+	public final fun getHeight ()Ljava/lang/Integer;
+	public final fun getMimeType ()Ljava/lang/String;
+	public final fun getWidth ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/IntRangeSnapshot {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/xheghun/analytics/IntRangeSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/IntRangeSnapshot;IIILjava/lang/Object;)Lcom/xheghun/analytics/IntRangeSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLower ()I
+	public final fun getUpper ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/LiveDelivery : java/lang/Enum {
+	public static final field DELIVERED Lcom/xheghun/analytics/LiveDelivery;
+	public static final field DROPPED Lcom/xheghun/analytics/LiveDelivery;
+	public static final field NO_SUBSCRIBERS Lcom/xheghun/analytics/LiveDelivery;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/LiveDelivery;
+	public static fun values ()[Lcom/xheghun/analytics/LiveDelivery;
+}
+
+public final class com/xheghun/analytics/LoadErrorClass : java/lang/Enum {
+	public static final field CONNECTION Lcom/xheghun/analytics/LoadErrorClass;
+	public static final field DNS Lcom/xheghun/analytics/LoadErrorClass;
+	public static final field HTTP_4XX Lcom/xheghun/analytics/LoadErrorClass;
+	public static final field HTTP_5XX Lcom/xheghun/analytics/LoadErrorClass;
+	public static final field TIMEOUT Lcom/xheghun/analytics/LoadErrorClass;
+	public static final field UNKNOWN Lcom/xheghun/analytics/LoadErrorClass;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/LoadErrorClass;
+	public static fun values ()[Lcom/xheghun/analytics/LoadErrorClass;
+}
+
+public abstract interface class com/xheghun/analytics/PlayerEventSource {
+	public abstract fun attach (Lcom/xheghun/analytics/DiagnosticEventPipeline;Ljava/lang/String;)V
+	public abstract fun detach ()V
+}
+
+public final class com/xheghun/analytics/PlayerState : java/lang/Enum {
+	public static final field BUFFERING Lcom/xheghun/analytics/PlayerState;
+	public static final field ENDED Lcom/xheghun/analytics/PlayerState;
+	public static final field IDLE Lcom/xheghun/analytics/PlayerState;
+	public static final field READY Lcom/xheghun/analytics/PlayerState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/PlayerState;
+	public static fun values ()[Lcom/xheghun/analytics/PlayerState;
+}
+
+public final class com/xheghun/analytics/PublishResult {
+	public fun <init> (ZLcom/xheghun/analytics/LiveDelivery;I)V
+	public synthetic fun <init> (ZLcom/xheghun/analytics/LiveDelivery;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Lcom/xheghun/analytics/LiveDelivery;
+	public final fun component3 ()I
+	public final fun copy (ZLcom/xheghun/analytics/LiveDelivery;I)Lcom/xheghun/analytics/PublishResult;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/PublishResult;ZLcom/xheghun/analytics/LiveDelivery;IILjava/lang/Object;)Lcom/xheghun/analytics/PublishResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLiveDelivery ()Lcom/xheghun/analytics/LiveDelivery;
+	public final fun getRecorded ()Z
+	public final fun getSinkFailureCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/SessionAggregator {
+	public fun <init> ()V
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear (Ljava/lang/String;)V
+	public final fun eventsFor (Ljava/lang/String;)Ljava/util/List;
+	public final fun exportSessionJson (Ljava/lang/String;Lcom/xheghun/analytics/DiagnosticEventJsonCodec;)Lcom/xheghun/analytics/CodecResult;
+	public static synthetic fun exportSessionJson$default (Lcom/xheghun/analytics/SessionAggregator;Ljava/lang/String;Lcom/xheghun/analytics/DiagnosticEventJsonCodec;ILjava/lang/Object;)Lcom/xheghun/analytics/CodecResult;
+	public final fun isTruncated (Ljava/lang/String;)Z
+	public final fun record (Lcom/xheghun/analytics/DiagnosticEvent;)V
+	public final fun snapshot (Ljava/lang/String;)Lcom/xheghun/analytics/SessionSnapshot;
+}
+
+public final class com/xheghun/analytics/SessionEndReason : java/lang/Enum {
+	public static final field APP_BACKGROUNDED Lcom/xheghun/analytics/SessionEndReason;
+	public static final field ERROR Lcom/xheghun/analytics/SessionEndReason;
+	public static final field PLAYBACK_ENDED Lcom/xheghun/analytics/SessionEndReason;
+	public static final field RELEASED Lcom/xheghun/analytics/SessionEndReason;
+	public static final field REPLACED Lcom/xheghun/analytics/SessionEndReason;
+	public static final field USER_STOPPED Lcom/xheghun/analytics/SessionEndReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/SessionEndReason;
+	public static fun values ()[Lcom/xheghun/analytics/SessionEndReason;
+}
+
+public final class com/xheghun/analytics/SessionSnapshot {
+	public fun <init> (ILjava/lang/String;ZLjava/util/List;)V
+	public synthetic fun <init> (ILjava/lang/String;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()Ljava/util/List;
+	public final fun copy (ILjava/lang/String;ZLjava/util/List;)Lcom/xheghun/analytics/SessionSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/SessionSnapshot;ILjava/lang/String;ZLjava/util/List;ILjava/lang/Object;)Lcom/xheghun/analytics/SessionSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getSchemaVersion ()I
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getTruncated ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/SessionSummary {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;IJLjava/lang/Double;ZLjava/lang/Double;Ljava/lang/Double;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()I
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/Double;
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/lang/Double;
+	public final fun component8 ()Ljava/lang/Double;
+	public final fun component9 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;IJLjava/lang/Double;ZLjava/lang/Double;Ljava/lang/Double;J)Lcom/xheghun/analytics/SessionSummary;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/SessionSummary;Ljava/lang/String;Ljava/lang/Long;IJLjava/lang/Double;ZLjava/lang/Double;Ljava/lang/Double;JILjava/lang/Object;)Lcom/xheghun/analytics/SessionSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAverageDecoderInitializationMs ()Ljava/lang/Double;
+	public final fun getDroppedFrameCount ()J
+	public final fun getRebufferCount ()I
+	public final fun getRebufferRatio ()Ljava/lang/Double;
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getStartupFailed ()Z
+	public final fun getTimeToFirstFrameMs ()Ljava/lang/Long;
+	public final fun getTotalRebufferDurationMs ()J
+	public final fun getTrackSwitchesPerMinute ()Ljava/lang/Double;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/analytics/SessionSummaryCalculator {
+	public fun <init> ()V
+	public final fun calculate (Lcom/xheghun/analytics/SessionSnapshot;)Lcom/xheghun/analytics/SessionSummary;
+}
+
+public final class com/xheghun/analytics/TrackSwitchReason : java/lang/Enum {
+	public static final field BANDWIDTH_DECREASE Lcom/xheghun/analytics/TrackSwitchReason;
+	public static final field BANDWIDTH_INCREASE Lcom/xheghun/analytics/TrackSwitchReason;
+	public static final field BUFFER_HEALTH Lcom/xheghun/analytics/TrackSwitchReason;
+	public static final field INITIAL Lcom/xheghun/analytics/TrackSwitchReason;
+	public static final field MANUAL_OVERRIDE Lcom/xheghun/analytics/TrackSwitchReason;
+	public static final field UNKNOWN Lcom/xheghun/analytics/TrackSwitchReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/TrackSwitchReason;
+	public static fun values ()[Lcom/xheghun/analytics/TrackSwitchReason;
+}
+
+public final class com/xheghun/analytics/TrackType : java/lang/Enum {
+	public static final field AUDIO Lcom/xheghun/analytics/TrackType;
+	public static final field TEXT Lcom/xheghun/analytics/TrackType;
+	public static final field VIDEO Lcom/xheghun/analytics/TrackType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/analytics/TrackType;
+	public static fun values ()[Lcom/xheghun/analytics/TrackType;
+}
+
+public final class com/xheghun/analytics/VideoCodecCapabilitiesSnapshot {
+	public fun <init> (Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/DoubleRangeSnapshot;II)V
+	public final fun component1 ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun component2 ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun component3 ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun component4 ()Lcom/xheghun/analytics/DoubleRangeSnapshot;
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/DoubleRangeSnapshot;II)Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;
+	public static synthetic fun copy$default (Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/IntRangeSnapshot;Lcom/xheghun/analytics/DoubleRangeSnapshot;IIILjava/lang/Object;)Lcom/xheghun/analytics/VideoCodecCapabilitiesSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeightAlignment ()I
+	public final fun getSupportedBitratesBps ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun getSupportedFrameRates ()Lcom/xheghun/analytics/DoubleRangeSnapshot;
+	public final fun getSupportedHeights ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun getSupportedWidths ()Lcom/xheghun/analytics/IntRangeSnapshot;
+	public final fun getWidthAlignment ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+

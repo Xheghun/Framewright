@@ -1,0 +1,144 @@
+public final class com/xheghun/framewright/diagnostics/ComposableSingletons$DiagnosticsOverlayScreenKt {
+	public static final field INSTANCE Lcom/xheghun/framewright/diagnostics/ComposableSingletons$DiagnosticsOverlayScreenKt;
+	public fun <init> ()V
+	public final fun getLambda$-1356874034$diagnostics_overlay ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1737330844$diagnostics_overlay ()Lkotlin/jvm/functions/Function3;
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticIssue {
+	public static final field $stable I
+	public fun <init> (Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;Ljava/lang/String;Ljava/lang/String;Z)V
+	public final fun component1 ()Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;Ljava/lang/String;Ljava/lang/String;Z)Lcom/xheghun/framewright/diagnostics/DiagnosticIssue;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/diagnostics/DiagnosticIssue;Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/xheghun/framewright/diagnostics/DiagnosticIssue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getKind ()Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isFatal ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticIssueKind : java/lang/Enum {
+	public static final field LOAD Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+	public static final field PLAYBACK Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+	public static fun values ()[Lcom/xheghun/framewright/diagnostics/DiagnosticIssueKind;
+}
+
+public abstract interface class com/xheghun/framewright/diagnostics/DiagnosticsOverlayAction {
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticsOverlayAction$Close : com/xheghun/framewright/diagnostics/DiagnosticsOverlayAction {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayAction$Close;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticsOverlayAction$ToggleVisibility : com/xheghun/framewright/diagnostics/DiagnosticsOverlayAction {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayAction$ToggleVisibility;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticsOverlayScreenKt {
+	public static final field DIAGNOSTICS_OVERLAY_TAG Ljava/lang/String;
+	public static final fun DiagnosticsOverlayScreen (Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayState;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticsOverlayState {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (ZLjava/lang/String;ZLcom/xheghun/analytics/PlayerState;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZIJLcom/xheghun/analytics/DrmScheme;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;ILcom/xheghun/framewright/diagnostics/DiagnosticIssue;)V
+	public synthetic fun <init> (ZLjava/lang/String;ZLcom/xheghun/analytics/PlayerState;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZIJLcom/xheghun/analytics/DrmScheme;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;ILcom/xheghun/framewright/diagnostics/DiagnosticIssue;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Lcom/xheghun/analytics/CodecImplementationType;
+	public final fun component13 ()Ljava/lang/Long;
+	public final fun component14 ()Ljava/lang/Long;
+	public final fun component15 ()Ljava/lang/Long;
+	public final fun component16 ()Z
+	public final fun component17 ()I
+	public final fun component18 ()J
+	public final fun component19 ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component20 ()Lcom/xheghun/analytics/DrmSessionEventType;
+	public final fun component21 ()Lcom/xheghun/analytics/DrmSessionState;
+	public final fun component22 ()Lcom/xheghun/analytics/DrmKeyState;
+	public final fun component23 ()Ljava/lang/String;
+	public final fun component24 ()Ljava/lang/String;
+	public final fun component25 ()Ljava/lang/String;
+	public final fun component26 ()Ljava/lang/Long;
+	public final fun component27 ()Lcom/xheghun/analytics/DrmRequestKind;
+	public final fun component28 ()Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public final fun component29 ()Ljava/lang/Boolean;
+	public final fun component3 ()Z
+	public final fun component30 ()Ljava/lang/String;
+	public final fun component31 ()Ljava/lang/String;
+	public final fun component32 ()I
+	public final fun component33 ()Lcom/xheghun/framewright/diagnostics/DiagnosticIssue;
+	public final fun component4 ()Lcom/xheghun/analytics/PlayerState;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun component6 ()Ljava/lang/Integer;
+	public final fun component7 ()Ljava/lang/Integer;
+	public final fun component8 ()Ljava/lang/Long;
+	public final fun component9 ()Ljava/lang/String;
+	public final fun copy (ZLjava/lang/String;ZLcom/xheghun/analytics/PlayerState;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZIJLcom/xheghun/analytics/DrmScheme;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;ILcom/xheghun/framewright/diagnostics/DiagnosticIssue;)Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayState;
+	public static synthetic fun copy$default (Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayState;ZLjava/lang/String;ZLcom/xheghun/analytics/PlayerState;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/xheghun/analytics/CodecImplementationType;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;ZIJLcom/xheghun/analytics/DrmScheme;Lcom/xheghun/analytics/DrmSessionEventType;Lcom/xheghun/analytics/DrmSessionState;Lcom/xheghun/analytics/DrmKeyState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Lcom/xheghun/analytics/DrmRequestKind;Lcom/xheghun/analytics/DrmLicenseRequestType;Ljava/lang/Boolean;Ljava/lang/String;Ljava/lang/String;ILcom/xheghun/framewright/diagnostics/DiagnosticIssue;IILjava/lang/Object;)Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDecoderImplementationType ()Lcom/xheghun/analytics/CodecImplementationType;
+	public final fun getDecoderName ()Ljava/lang/String;
+	public final fun getDrmErrorCode ()Ljava/lang/String;
+	public final fun getDrmErrorMessage ()Ljava/lang/String;
+	public final fun getDrmExpirationTimeMs ()Ljava/lang/Long;
+	public final fun getDrmHdcpLevel ()Ljava/lang/String;
+	public final fun getDrmKeyState ()Lcom/xheghun/analytics/DrmKeyState;
+	public final fun getDrmLicenseRequestType ()Lcom/xheghun/analytics/DrmLicenseRequestType;
+	public final fun getDrmMaxHdcpLevel ()Ljava/lang/String;
+	public final fun getDrmRequestKind ()Lcom/xheghun/analytics/DrmRequestKind;
+	public final fun getDrmRequestSuccessful ()Ljava/lang/Boolean;
+	public final fun getDrmScheme ()Lcom/xheghun/analytics/DrmScheme;
+	public final fun getDrmSecurityLevel ()Ljava/lang/String;
+	public final fun getDrmSessionEvent ()Lcom/xheghun/analytics/DrmSessionEventType;
+	public final fun getDrmSessionState ()Lcom/xheghun/analytics/DrmSessionState;
+	public final fun getDroppedFrames ()I
+	public final fun getFramewrightBandwidthBps ()Ljava/lang/Long;
+	public final fun getHasEnded ()Z
+	public final fun getLastObservedBufferMs ()Ljava/lang/Long;
+	public final fun getLatestIssue ()Lcom/xheghun/framewright/diagnostics/DiagnosticIssue;
+	public final fun getMedia3BandwidthBps ()Ljava/lang/Long;
+	public final fun getPlayerState ()Lcom/xheghun/analytics/PlayerState;
+	public final fun getRebufferCount ()I
+	public final fun getSessionId ()Ljava/lang/String;
+	public final fun getTimeToFirstFrameMs ()Ljava/lang/Long;
+	public final fun getTotalRebufferDurationMs ()J
+	public final fun getVideoBitrateBps ()Ljava/lang/Long;
+	public final fun getVideoCodecs ()Ljava/lang/String;
+	public final fun getVideoHeight ()Ljava/lang/Integer;
+	public final fun getVideoMimeType ()Ljava/lang/String;
+	public final fun getVideoWidth ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public final fun isRebuffering ()Z
+	public final fun isVisible ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/xheghun/framewright/diagnostics/DiagnosticsOverlayViewModel : androidx/lifecycle/ViewModel {
+	public static final field $stable I
+	public static final field DEFAULT_UPDATE_INTERVAL_MS J
+	public fun <init> ()V
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun onAction (Lcom/xheghun/framewright/diagnostics/DiagnosticsOverlayAction;)V
+	public final fun onDiagnosticEvent (Lcom/xheghun/analytics/DiagnosticEvent;)V
+}
+
