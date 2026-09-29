@@ -4,6 +4,11 @@ All notable changes to Framewright are documented here.
 
 ## Unreleased
 
+## 0.1.1
+
+- Deferred Media3 decoder inspection until its input format is available, preventing false
+  unsupported-MIME diagnostics when callback order varies.
+
 ## 0.1.0
 
 - Added player-independent diagnostics events, bounded session aggregation, summaries, and

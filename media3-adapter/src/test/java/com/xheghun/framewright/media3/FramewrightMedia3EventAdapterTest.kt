@@ -122,6 +122,113 @@ class FramewrightMedia3EventAdapterTest {
     }
 
     @Test
+    fun `video decoder waits for its format before capability inspection`() {
+        val inspectionRequests = mutableListOf<DecoderInspectionRequest>()
+        val inspectingAdapter =
+            FramewrightMedia3EventAdapter(
+                player = player,
+                clock = clock,
+                eventIdGenerator = sequentialIds(),
+                onTerminalState = terminalReasons::add,
+                decoderAccelerationResolver = { true },
+                decoderCapabilityResolver = { request ->
+                    inspectionRequests += request
+                    inspectedSoftwareCapability()
+                },
+            )
+        inspectingAdapter.attach(pipeline, "playback-session")
+        inspectingAdapter.markPrepareStart()
+        clock.elapsedTime = 150
+
+        inspectingAdapter.handleDecoderInitialized("c2.android.avc.decoder", TrackType.VIDEO, 16)
+
+        assertThat(pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.DecoderInit>()).isEmpty()
+        assertThat(inspectionRequests).isEmpty()
+
+        clock.elapsedTime = 300
+        inspectingAdapter.handleVideoInputFormatChanged(videoFormat(width = 1_920, height = 1_080, bitrate = 5_000_000))
+
+        val decoder =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                .single()
+        assertThat(inspectionRequests.single().mimeType).isEqualTo("video/avc")
+        assertThat(inspectionRequests.single().format?.width).isEqualTo(1_920)
+        assertThat(decoder.mimeType).isEqualTo("video/avc")
+        assertThat(decoder.metadata.elapsedRealtimeMs).isEqualTo(150)
+        assertThat(decoder.capabilities).isEqualTo(inspectedSoftwareCapability())
+    }
+
+    @Test
+    fun `pending audio and video decoders flush independently`() {
+        attachForPreparation()
+        adapter.handleDecoderInitialized("c2.qti.avc.decoder", TrackType.VIDEO, 20)
+        adapter.handleDecoderInitialized("c2.android.aac.decoder", TrackType.AUDIO, 8)
+
+        adapter.handleAudioInputFormatChanged(
+            Format
+                .Builder()
+                .setSampleMimeType("audio/mp4a-latm")
+                .setAverageBitrate(128_000)
+                .build(),
+        )
+
+        var decoders = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.DecoderInit>()
+        assertThat(decoders.map { it.trackType }).containsExactly(TrackType.AUDIO)
+        assertThat(decoders.single().mimeType).isEqualTo("audio/mp4a-latm")
+
+        adapter.handleVideoInputFormatChanged(videoFormat(width = 1_280, height = 720, bitrate = 2_000_000))
+
+        decoders = pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.DecoderInit>()
+        assertThat(decoders.map { it.trackType }).containsExactly(TrackType.AUDIO, TrackType.VIDEO)
+        assertThat(decoders.map { it.mimeType }).containsExactly("audio/mp4a-latm", "video/avc")
+    }
+
+    @Test
+    fun `detach publishes unresolved decoder without inspecting unknown mime type`() {
+        val inspectionRequests = mutableListOf<DecoderInspectionRequest>()
+        val inspectingAdapter =
+            FramewrightMedia3EventAdapter(
+                player = player,
+                clock = clock,
+                eventIdGenerator = sequentialIds(),
+                onTerminalState = terminalReasons::add,
+                decoderAccelerationResolver = { true },
+                decoderCapabilityResolver = { request ->
+                    inspectionRequests += request
+                    inspectedSoftwareCapability()
+                },
+            )
+        inspectingAdapter.attach(pipeline, "playback-session")
+        inspectingAdapter.markPrepareStart()
+        inspectingAdapter.handleDecoderInitialized("vendor.decoder", TrackType.VIDEO, 10)
+        inspectingAdapter.handleVideoInputFormatChanged(
+            Format
+                .Builder()
+                .setWidth(1_280)
+                .setHeight(720)
+                .build(),
+        )
+
+        assertThat(pipeline.snapshot("playback-session").events.filterIsInstance<DiagnosticEvent.DecoderInit>()).isEmpty()
+
+        inspectingAdapter.detach()
+
+        val decoder =
+            pipeline
+                .snapshot("playback-session")
+                .events
+                .filterIsInstance<DiagnosticEvent.DecoderInit>()
+                .single()
+        assertThat(decoder.mimeType).isEqualTo("unknown")
+        assertThat(decoder.capabilities).isEqualTo(null)
+        assertThat(decoder.isHardwareAccelerated).isEqualTo(true)
+        assertThat(inspectionRequests).isEmpty()
+    }
+
+    @Test
     fun `inspector failure reports diagnostics error and retains fallback classification`() {
         val reportedErrors = mutableListOf<Throwable>()
         val resilientAdapter =
@@ -284,6 +391,7 @@ class FramewrightMedia3EventAdapterTest {
             )
         failingCodecAdapter.attach(pipeline, "playback-session")
         failingCodecAdapter.markPrepareStart()
+        failingCodecAdapter.handleInputFormatChanged(TrackType.VIDEO, "video/avc")
 
         failingCodecAdapter.handleDecoderInitialized("vendor.decoder", TrackType.VIDEO, 10)
 

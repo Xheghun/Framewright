@@ -36,6 +36,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 private const val SEEK_BUFFERING_CALLBACK_WINDOW_MS = 1_000L
+private const val UNKNOWN_MIME_TYPE = "unknown"
 
 @UnstableApi
 internal class FramewrightMedia3EventAdapter(
@@ -54,27 +55,29 @@ internal class FramewrightMedia3EventAdapter(
     private var prepareStartedAtMs = 0L
     private var hasRenderedFirstFrame = false
     private var rebufferStartedAtMs: Long? = null
-    private var videoMimeType = "unknown"
-    private var audioMimeType = "unknown"
+    private var videoMimeType = UNKNOWN_MIME_TYPE
+    private var audioMimeType = UNKNOWN_MIME_TYPE
     private var seekStartedAtMs: Long? = null
     private var selectedVideoFormat: FormatSnapshot? = null
     private var selectedAudioFormat: FormatSnapshot? = null
     private var availableVideoFormats: List<FormatSnapshot> = emptyList()
     private var latestBandwidthEstimateBps = 0L
     private val retryCountByLoadTaskId = mutableMapOf<Long, Int>()
+    private val pendingDecoderInitializations = mutableListOf<PendingDecoderInitialization>()
 
     fun markPrepareStart() {
         prepareStartedAtMs = clock.elapsedRealtimeMs()
         hasRenderedFirstFrame = false
         rebufferStartedAtMs = null
-        videoMimeType = "unknown"
-        audioMimeType = "unknown"
+        videoMimeType = UNKNOWN_MIME_TYPE
+        audioMimeType = UNKNOWN_MIME_TYPE
         seekStartedAtMs = null
         selectedVideoFormat = null
         selectedAudioFormat = null
         availableVideoFormats = emptyList()
         latestBandwidthEstimateBps = 0
         retryCountByLoadTaskId.clear()
+        pendingDecoderInitializations.clear()
     }
 
     fun finishOpenRebuffer() {
@@ -342,8 +345,8 @@ internal class FramewrightMedia3EventAdapter(
         mimeType: String?,
     ) {
         when (trackType) {
-            TrackType.VIDEO -> videoMimeType = mimeType ?: "unknown"
-            TrackType.AUDIO -> audioMimeType = mimeType ?: "unknown"
+            TrackType.VIDEO -> videoMimeType = mimeType ?: UNKNOWN_MIME_TYPE
+            TrackType.AUDIO -> audioMimeType = mimeType ?: UNKNOWN_MIME_TYPE
             TrackType.TEXT -> Unit
         }
     }
@@ -357,11 +360,13 @@ internal class FramewrightMedia3EventAdapter(
                 C.SELECTION_REASON_ADAPTIVE
             }
         handleVideoFormatSelected(format, inferredReason)
+        flushPendingDecoderInitializations(TrackType.VIDEO)
     }
 
     internal fun handleAudioInputFormatChanged(format: Format) {
         handleInputFormatChanged(TrackType.AUDIO, format.sampleMimeType)
         selectedAudioFormat = format.toSnapshot()
+        flushPendingDecoderInitializations(TrackType.AUDIO)
     }
 
     internal fun handleDecoderInitialized(
@@ -369,8 +374,19 @@ internal class FramewrightMedia3EventAdapter(
         trackType: TrackType,
         initializationDurationMs: Long,
     ) {
-        val mimeType = if (trackType == TrackType.VIDEO) videoMimeType else audioMimeType
-        publish(decoderEvent(decoderName, mimeType, trackType, initializationDurationMs))
+        val pendingInitialization =
+            PendingDecoderInitialization(
+                metadata = metadata(),
+                decoderName = decoderName,
+                trackType = trackType,
+                initializationDurationMs = initializationDurationMs,
+            )
+        val mimeType = mimeTypeFor(trackType)
+        if (mimeType == UNKNOWN_MIME_TYPE) {
+            pendingDecoderInitializations += pendingInitialization
+            return
+        }
+        publish(decoderEvent(pendingInitialization, mimeType))
     }
 
     internal fun handleAvailableVideoFormats(formats: List<Format>) {
@@ -487,11 +503,11 @@ internal class FramewrightMedia3EventAdapter(
     }
 
     private fun decoderEvent(
-        decoderName: String,
+        pendingInitialization: PendingDecoderInitialization,
         mimeType: String,
-        trackType: TrackType,
-        initializationDurationMs: Long,
     ): DiagnosticEvent.DecoderInit {
+        val decoderName = pendingInitialization.decoderName
+        val trackType = pendingInitialization.trackType
         val selectedFormat =
             when (trackType) {
                 TrackType.VIDEO -> selectedVideoFormat
@@ -499,7 +515,7 @@ internal class FramewrightMedia3EventAdapter(
                 TrackType.TEXT -> null
             }
         val capabilities =
-            decoderCapabilityResolver?.let { resolver ->
+            decoderCapabilityResolver?.takeIf { mimeType != UNKNOWN_MIME_TYPE }?.let { resolver ->
                 runCatching {
                     resolver.resolve(
                         DecoderInspectionRequest(
@@ -524,15 +540,37 @@ internal class FramewrightMedia3EventAdapter(
                 -> fallbackHardwareAcceleration
             }
         return DiagnosticEvent.DecoderInit(
-            metadata = metadata(),
+            metadata = pendingInitialization.metadata,
             decoderName = decoderName,
             mimeType = mimeType,
             trackType = trackType,
-            initializationDurationMs = initializationDurationMs,
+            initializationDurationMs = pendingInitialization.initializationDurationMs,
             isHardwareAccelerated = isHardwareAccelerated,
             capabilities = capabilities,
         )
     }
+
+    private fun flushPendingDecoderInitializations(
+        trackType: TrackType? = null,
+        includeUnknownMimeTypes: Boolean = false,
+    ) {
+        val pendingInitializations =
+            pendingDecoderInitializations.filter { pending ->
+                (trackType == null || pending.trackType == trackType) &&
+                    (includeUnknownMimeTypes || mimeTypeFor(pending.trackType) != UNKNOWN_MIME_TYPE)
+            }
+        pendingDecoderInitializations.removeAll(pendingInitializations.toSet())
+        pendingInitializations.forEach { pending ->
+            publish(decoderEvent(pending, mimeTypeFor(pending.trackType)))
+        }
+    }
+
+    private fun mimeTypeFor(trackType: TrackType): String =
+        when (trackType) {
+            TrackType.VIDEO -> videoMimeType
+            TrackType.AUDIO -> audioMimeType
+            TrackType.TEXT -> UNKNOWN_MIME_TYPE
+        }
 
     private fun metadata() =
         DiagnosticEventMetadata(
@@ -581,9 +619,11 @@ internal class FramewrightMedia3EventAdapter(
     }
 
     override fun onDetach() {
+        flushPendingDecoderInitializations(includeUnknownMimeTypes = true)
         player.removeAnalyticsListener(listener)
         pipeline = null
         retryCountByLoadTaskId.clear()
+        pendingDecoderInitializations.clear()
     }
 
     private fun classifyLoadError(error: IOException): LoadErrorClass =
@@ -598,6 +638,13 @@ internal class FramewrightMedia3EventAdapter(
 
     private fun extractHttpStatus(error: IOException): Int? = (error as? HttpDataSource.InvalidResponseCodeException)?.responseCode
 }
+
+private data class PendingDecoderInitialization(
+    val metadata: DiagnosticEventMetadata,
+    val decoderName: String,
+    val trackType: TrackType,
+    val initializationDurationMs: Long,
+)
 
 @UnstableApi
 private fun Int.toAnalyticsDrmSessionState(): DrmSessionState =
