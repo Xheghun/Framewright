@@ -1,6 +1,6 @@
 # Diagnostics overlay
 
-Coordinate: `io.github.xheghun:framewright-diagnostics-overlay:0.1.0`
+Coordinate: `io.github.xheghun:framewright-diagnostics-overlay:$latestVersion`
 
 The overlay is a stateless Compose surface plus a throttling reducer ViewModel. It never owns the
 player or diagnostics session.

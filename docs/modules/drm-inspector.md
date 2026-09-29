@@ -1,6 +1,6 @@
 # DRM inspector
 
-Coordinate: `io.github.xheghun:framewright-drm-inspector:0.1.0`
+Coordinate: `io.github.xheghun:framewright-drm-inspector:$latestVersion`
 
 The inspector observes the host's streaming DRM integration. Install its provider, wrap the real
 callback, and attach the same instance as a contributor:

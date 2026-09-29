@@ -1,6 +1,6 @@
 # Analytics
 
-Coordinate: `io.github.xheghun:framewright-analytics:0.1.0`
+Coordinate: `io.github.xheghun:framewright-analytics:$latestVersion`
 
 This pure Kotlin module defines the stable diagnostic event model. It has no Android or Media3
 dependency and can be used to build another player adapter or process exported sessions.

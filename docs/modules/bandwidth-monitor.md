@@ -1,6 +1,6 @@
 # Bandwidth monitor
 
-Coordinate: `io.github.xheghun:framewright-bandwidth-monitor:0.1.0`
+Coordinate: `io.github.xheghun:framewright-bandwidth-monitor:$latestVersion`
 
 `FramewrightBandwidthMeter` implements Media3's `BandwidthMeter` and `TransferListener`. Install it
 before constructing the player and attach the same instance as a Framewright contributor:

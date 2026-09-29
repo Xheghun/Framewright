@@ -1,6 +1,6 @@
 # Codec inspector
 
-Coordinate: `io.github.xheghun:framewright-codec-inspector:0.1.0`
+Coordinate: `io.github.xheghun:framewright-codec-inspector:$latestVersion`
 
 Create one inspector and pass it as the adapter's decoder capability resolver:
 

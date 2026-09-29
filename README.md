@@ -37,12 +37,14 @@ Add the Media3 adapter and any optional features:
 
 ```kotlin
 dependencies {
-    implementation("io.github.xheghun:framewright-media3-adapter:0.1.0")
-    implementation("io.github.xheghun:framewright-bandwidth-monitor:0.1.0")
-    implementation("io.github.xheghun:framewright-codec-inspector:0.1.0")
-    implementation("io.github.xheghun:framewright-drm-inspector:0.1.0")
-    implementation("io.github.xheghun:framewright-diagnostics-overlay:0.1.0")
-    implementation("io.github.xheghun:framewright-storage:0.1.0")
+    val latestVersion = "<latest-version>"
+
+    implementation("io.github.xheghun:framewright-media3-adapter:$latestVersion")
+    implementation("io.github.xheghun:framewright-bandwidth-monitor:$latestVersion")
+    implementation("io.github.xheghun:framewright-codec-inspector:$latestVersion")
+    implementation("io.github.xheghun:framewright-drm-inspector:$latestVersion")
+    implementation("io.github.xheghun:framewright-diagnostics-overlay:$latestVersion")
+    implementation("io.github.xheghun:framewright-storage:$latestVersion")
 }
 ```
 
