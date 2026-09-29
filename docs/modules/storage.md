@@ -1,6 +1,6 @@
 # Storage
 
-Coordinate: `io.github.xheghun:framewright-storage:0.1.0`
+Coordinate: `io.github.xheghun:framewright-storage:$latestVersion`
 
 The storage module persists diagnostic events in Room and reconstructs complete analytics session
 snapshots. Create one instance per database:

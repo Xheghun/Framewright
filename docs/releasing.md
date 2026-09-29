@@ -30,8 +30,13 @@ the ASCII-armored private signing key as the signing-key secret.
    ```
 
 4. Inspect artifacts under `build/local-maven-repository` and generated Dokka output. To test an
-   exact non-snapshot version locally, provide local signing credentials and add
-   `-PVERSION_NAME=0.1.0`.
+   exact non-snapshot version locally, provide local signing credentials and run:
+
+   ```bash
+   releaseVersion="<release-version>"
+   ./gradlew verifyReleaseReadiness -PVERSION_NAME="$releaseVersion"
+   ```
+
 5. Merge the release-ready commit into `main`.
 
 ## Publish
@@ -39,8 +44,9 @@ the ASCII-armored private signing key as the signing-key secret.
 Create and push an annotated tag from the intended commit on `main`:
 
 ```bash
-git tag -a v0.1.0 -m "Framewright 0.1.0"
-git push origin v0.1.0
+releaseVersion="<release-version>"
+git tag -a "v$releaseVersion" -m "Framewright $releaseVersion"
+git push origin "v$releaseVersion"
 ```
 
 The release workflow verifies that the tag is an exact `vMAJOR.MINOR.PATCH`, verifies that its

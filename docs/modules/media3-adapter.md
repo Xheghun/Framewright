@@ -1,6 +1,6 @@
 # Media3 adapter
 
-Coordinate: `io.github.xheghun:framewright-media3-adapter:0.1.0`
+Coordinate: `io.github.xheghun:framewright-media3-adapter:$latestVersion`
 
 The adapter observes a host-owned `ExoPlayer` and maps Media3 callbacks into Framewright events. It
 does not create, prepare, control, or release the player.

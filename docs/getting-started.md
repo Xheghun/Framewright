@@ -9,16 +9,16 @@ Use Maven Central and choose artifacts independently:
 
 ```kotlin
 dependencies {
-    val framewrightVersion = "0.1.0"
+    val latestVersion = "<latest-version>"
 
-    implementation("io.github.xheghun:framewright-media3-adapter:$framewrightVersion")
+    implementation("io.github.xheghun:framewright-media3-adapter:$latestVersion")
 
     // Optional:
-    implementation("io.github.xheghun:framewright-bandwidth-monitor:$framewrightVersion")
-    implementation("io.github.xheghun:framewright-codec-inspector:$framewrightVersion")
-    implementation("io.github.xheghun:framewright-drm-inspector:$framewrightVersion")
-    implementation("io.github.xheghun:framewright-diagnostics-overlay:$framewrightVersion")
-    implementation("io.github.xheghun:framewright-storage:$framewrightVersion")
+    implementation("io.github.xheghun:framewright-bandwidth-monitor:$latestVersion")
+    implementation("io.github.xheghun:framewright-codec-inspector:$latestVersion")
+    implementation("io.github.xheghun:framewright-drm-inspector:$latestVersion")
+    implementation("io.github.xheghun:framewright-diagnostics-overlay:$latestVersion")
+    implementation("io.github.xheghun:framewright-storage:$latestVersion")
 }
 ```
 
